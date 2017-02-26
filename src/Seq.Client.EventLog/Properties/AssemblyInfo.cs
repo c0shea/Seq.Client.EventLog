@@ -6,11 +6,11 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("Seq.Client.EventLog")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Writes Windows Event Log entries to Seq")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("Seq.Client.EventLog")]
-[assembly: AssemblyCopyright("Copyright ©  2017")]
+[assembly: AssemblyCopyright("Copyright © 2017 Connor O'Shea")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 

@@ -10,9 +10,9 @@ using System.Threading.Tasks;
 
 namespace Seq.Client.EventLog
 {
-    public partial class Service1 : ServiceBase
+    public partial class Service : ServiceBase
     {
-        public Service1()
+        public Service()
         {
             InitializeComponent();
         }

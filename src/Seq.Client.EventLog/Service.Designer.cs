@@ -1,6 +1,6 @@
 ﻿namespace Seq.Client.EventLog
 {
-    partial class Service1
+    partial class Service
     {
         /// <summary> 
         /// Required designer variable.

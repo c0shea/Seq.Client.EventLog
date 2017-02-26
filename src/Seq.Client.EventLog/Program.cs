@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+using System.Configuration.Install;
+using System.Reflection;
 using System.ServiceProcess;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Seq.Client.EventLog
 {
@@ -11,15 +9,30 @@ namespace Seq.Client.EventLog
     {
         /// <summary>
         /// The main entry point for the application.
+        /// The service can be installed or uninstalled from the command line
+        /// by passing the /install or /uninstall argument.
         /// </summary>
-        static void Main()
+        public static void Main(string[] args)
         {
-            ServiceBase[] ServicesToRun;
-            ServicesToRun = new ServiceBase[]
+            // Allows the installation and uninstallation via the command line
+            if (Environment.UserInteractive)
             {
-                new Service1()
-            };
-            ServiceBase.Run(ServicesToRun);
+                var parameter = string.Concat(args);
+                switch (parameter)
+                {
+                    case "/install":
+                        ManagedInstallerClass.InstallHelper(new[] { Assembly.GetExecutingAssembly().Location });
+                        break;
+                    case "/uninstall":
+                        ManagedInstallerClass.InstallHelper(new[] { "/u", Assembly.GetExecutingAssembly().Location });
+                        break;
+                }
+            }
+            else
+            {
+                // Run the service
+                ServiceBase.Run(new Service());
+            }
         }
     }
 }
