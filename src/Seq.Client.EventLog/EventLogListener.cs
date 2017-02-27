@@ -13,7 +13,8 @@ namespace Seq.Client.EventLog
         public string LogName { get; set; }
         public string MachineName { get; set; }
         public string Source { get; set; }
-
+        public bool ProcessRetroactiveEntries { get; set; }
+        
         // These two properties allow for the filterting of events that will be sent to Seq.
         // If they are not specified in the JSON, all events in the log will be sent.
         public List<EventLogEntryType> LogLevels { get; set; }
@@ -45,8 +46,16 @@ namespace Seq.Client.EventLog
                     _eventLog.Source = Source;
                 }
 
-                _eventLog.EntryWritten += EventLogEntryWritten;
+                _eventLog.EntryWritten += (sender, args) =>
+                {
+                    HandleEventLogEntry(args.Entry);
+                };
                 _eventLog.EnableRaisingEvents = true;
+
+                if (ProcessRetroactiveEntries)
+                {
+                    HandleRetroactiveEntries();
+                }
             }
             catch (Exception)
             {
@@ -68,38 +77,23 @@ namespace Seq.Client.EventLog
             }
         }
 
-        private void EventLogEntryWritten(object sender, EntryWrittenEventArgs e)
+        private void HandleRetroactiveEntries()
         {
-            var entry = e.Entry;
+            foreach (EventLogEntry entry in _eventLog.Entries)
+            {
+                HandleEventLogEntry(entry);
+            }
+        }
 
+        private void HandleEventLogEntry(EventLogEntry entry)
+        {
             if (LogLevels != null && LogLevels.Count > 0 && !LogLevels.Contains(entry.EntryType))
                 return;
 
             if (EventIds != null && EventIds.Count > 0 && !EventIds.Contains(entry.EventID))
                 return;
 
-            var rawEvent = new RawEvents
-            {
-                Events = new[]
-                {
-                    new RawEvent
-                    {
-                        Timestamp = entry.TimeGenerated,
-                        Level = MapLogLevel(entry.EntryType),
-                        MessageTemplate = entry.Message,
-                        Properties = new Dictionary<string, object>
-                        {
-                            { "MachineName", entry.MachineName },
-                            { "EventId", entry.EventID },
-                            { "InstanceId", entry.InstanceId },
-                            { "Source", entry.Source },
-                            { "Category", entry.Category }
-                        }
-                    },
-                }
-            };
-
-            PostRawEvents(rawEvent);
+            PostRawEvents(entry.ToDto());
         }
 
         private static void PostRawEvents(RawEvents rawEvents)
@@ -123,25 +117,6 @@ namespace Seq.Client.EventLog
             catch (Exception)
             {
 
-            }
-        }
-
-        private static string MapLogLevel(EventLogEntryType type)
-        {
-            switch (type)
-            {
-                case EventLogEntryType.Information:
-                    return "Information";
-                case EventLogEntryType.Warning:
-                    return "Warning";
-                case EventLogEntryType.Error:
-                    return "Error";
-                case EventLogEntryType.SuccessAudit:
-                    return "Information";
-                case EventLogEntryType.FailureAudit:
-                    return "Warning";
-                default:
-                    return "Debug";
             }
         }
     }
