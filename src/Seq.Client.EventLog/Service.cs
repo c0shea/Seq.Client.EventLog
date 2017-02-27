@@ -1,16 +1,14 @@
 ﻿using System.Collections.Generic;
-using System.Diagnostics;
-using System.Net.Http;
+using System.IO;
+using System.Reflection;
 using System.ServiceProcess;
-using System.Text;
 using Newtonsoft.Json;
-using Seq.Client.EventLog.Properties;
 
 namespace Seq.Client.EventLog
 {
     public partial class Service : ServiceBase
     {
-        private System.Diagnostics.EventLog _eventLog;
+        private List<EventLogListener> _eventLogListeners;
 
         #region Windows Service Base
         public Service()
@@ -20,79 +18,47 @@ namespace Seq.Client.EventLog
 
         protected override void OnStart(string[] args)
         {
-            _eventLog = new System.Diagnostics.EventLog("Application");
-            _eventLog.EntryWritten += EventLogOnEntryWritten;
-            _eventLog.EnableRaisingEvents = true;
+            LoadListeners();
+            ValidateListeners();
+            StartListeners();
         }
-
+        
         protected override void OnStop()
         {
-            _eventLog.EnableRaisingEvents = false;
-            _eventLog.Close();
-            _eventLog.Dispose();
+            StopListeners();
         }
         #endregion
 
-        private void EventLogOnEntryWritten(object sender, EntryWrittenEventArgs entryWrittenEventArgs)
+        private void LoadListeners()
         {
-            var entry = entryWrittenEventArgs.Entry;
+            var directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var filePath = Path.Combine(directory, "EventLogListeners.json");
+            var file = File.ReadAllText(filePath);
 
-            var rawEvent = new RawEvents
-            {
-                Events = new[]
-                {
-                    new RawEvent
-                    {
-                        Timestamp = entry.TimeGenerated,
-                        Level = MapLogLevel(entry.EntryType),
-                        MessageTemplate = entry.Message,
-                        Properties = new Dictionary<string, object>
-                        {
-                            { "MachineName", entry.MachineName },
-                            { "EventId", entry.EventID },
-                            { "InstanceId", entry.InstanceId },
-                            { "Source", entry.Source },
-                            { "Category", entry.Category }
-                        }
-                    },
-                }
-            };
-
-            PostRawEvents(rawEvent);
+            _eventLogListeners = JsonConvert.DeserializeObject<List<EventLogListener>>(file);
         }
 
-        private static string MapLogLevel(EventLogEntryType type)
+        private void ValidateListeners()
         {
-            switch (type)
+            foreach (var listener in _eventLogListeners)
             {
-                case EventLogEntryType.Information:
-                    return "Information";
-                case EventLogEntryType.Warning:
-                    return "Warning";
-                case EventLogEntryType.Error:
-                    return "Error";
-                case EventLogEntryType.SuccessAudit:
-                    return "Information";
-                case EventLogEntryType.FailureAudit:
-                    return "Warning";
-                default:
-                    return "Debug";
+                listener.Validate();
             }
         }
 
-        private void PostRawEvents(RawEvents rawEvents)
+        private void StartListeners()
         {
-            using (var client = new HttpClient())
+            foreach (var listener in _eventLogListeners)
             {
-                var uri = Settings.Default.SeqUri + "/api/events/raw";
+                listener.Start();
+            }
+        }
 
-                if (!string.IsNullOrWhiteSpace(Settings.Default.ApiKey))
-                {
-                    uri += "?apiKey=" + Settings.Default.ApiKey;
-                }
-
-                var content = new StringContent(JsonConvert.SerializeObject(rawEvents, Formatting.None), Encoding.UTF8, "application/json");
-                var result = client.PostAsync(uri, content).Result;
+        private void StopListeners()
+        {
+            foreach (var listener in _eventLogListeners)
+            {
+                listener.Stop();
             }
         }
     }
