@@ -14,6 +14,12 @@ The trouble, however, is that applications beyond your control write useful info
 6. From the command line, run ```net start Seq.Client.EventLog``` to start the service.
 7. Click the refresh button in Seq as you wait anxiously for the events to start flooding in!
 
+## Enriched Events
+
+Events are ingested into Seq with a few useful properties that allow for easy searching.
+
+![](https://raw.githubusercontent.com/c0shea/Seq.Client.EventLog/master/Screenshot.png)
+
 ## Event Log Listeners
 
 The JSON config file allows for multiple listeners to be defined. Each one should be a new object in the array.
