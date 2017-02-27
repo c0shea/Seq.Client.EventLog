@@ -13,13 +13,13 @@ namespace Seq.Client.EventLog
     {
         public string LogName { get; set; }
         public string MachineName { get; set; }
-        public List<string> Sources { get; set; }
         public bool ProcessRetroactiveEntries { get; set; }
         
-        // These two properties allow for the filterting of events that will be sent to Seq.
+        // These properties allow for the filterting of events that will be sent to Seq.
         // If they are not specified in the JSON, all events in the log will be sent.
         public List<EventLogEntryType> LogLevels { get; set; }
         public List<int> EventIds { get; set; }
+        public List<string> Sources { get; set; }
 
         private System.Diagnostics.EventLog _eventLog;
 
