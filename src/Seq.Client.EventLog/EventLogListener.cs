@@ -12,7 +12,7 @@ namespace Seq.Client.EventLog
     {
         public string LogName { get; set; }
         public string MachineName { get; set; }
-        public string Source { get; set; }
+        public List<string> Sources { get; set; }
         public bool ProcessRetroactiveEntries { get; set; }
         
         // These two properties allow for the filterting of events that will be sent to Seq.
@@ -40,12 +40,7 @@ namespace Seq.Client.EventLog
                 {
                     _eventLog.MachineName = MachineName;
                 }
-
-                if (!string.IsNullOrWhiteSpace(Source))
-                {
-                    _eventLog.Source = Source;
-                }
-
+                
                 _eventLog.EntryWritten += (sender, args) =>
                 {
                     HandleEventLogEntry(args.Entry);
@@ -87,10 +82,14 @@ namespace Seq.Client.EventLog
 
         private void HandleEventLogEntry(EventLogEntry entry)
         {
+            // Don't send the entry to Seq if it doesn't match the filtered log levels, event IDs, or sources
             if (LogLevels != null && LogLevels.Count > 0 && !LogLevels.Contains(entry.EntryType))
                 return;
 
             if (EventIds != null && EventIds.Count > 0 && !EventIds.Contains(entry.EventID))
+                return;
+
+            if (Sources != null && Sources.Count > 0 && !Sources.Contains(entry.Source))
                 return;
 
             PostRawEvents(entry.ToDto());
