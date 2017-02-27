@@ -24,7 +24,7 @@ namespace Seq.Client.EventLog
             }
         }
 
-        public static RawEvents ToDto(this EventLogEntry entry)
+        public static RawEvents ToDto(this EventLogEntry entry, string logName)
         {
             return new RawEvents
             {
@@ -41,7 +41,8 @@ namespace Seq.Client.EventLog
                             { "EventId", entry.EventID },
                             { "InstanceId", entry.InstanceId },
                             { "Source", entry.Source },
-                            { "Category", entry.Category }
+                            { "Category", entry.CategoryNumber },
+                            { "EventLogName", logName }
                         }
                     },
                 }

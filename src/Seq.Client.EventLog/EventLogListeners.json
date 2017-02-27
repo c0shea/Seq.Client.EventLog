@@ -1,10 +1,16 @@
 ﻿[
   {
     "LogName": "Application",
-    "LogLevels": [ 1, 2, 4, 8, 16 ]
+    "LogLevels": [ 1, 2, 4, 8, 16 ],
+    "ProcessRetroactiveEntries": true
   },
   {
     "LogName": "Security",
-    "LogLevels": [ 1, 2, 4, 8, 16 ]
+    "LogLevels": [ 1, 2, 4, 8, 16 ],
+    "ProcessRetroactiveEntries": true
+  },
+  {
+    "LogName": "System",
+    "ProcessRetroactiveEntries": true
   }
 ]

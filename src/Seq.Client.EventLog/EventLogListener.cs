@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Seq.Client.EventLog.Properties;
 
@@ -43,13 +44,14 @@ namespace Seq.Client.EventLog
                 
                 _eventLog.EntryWritten += (sender, args) =>
                 {
-                    HandleEventLogEntry(args.Entry);
+                    HandleEventLogEntry(args.Entry, _eventLog.Log);
                 };
                 _eventLog.EnableRaisingEvents = true;
 
                 if (ProcessRetroactiveEntries)
                 {
-                    HandleRetroactiveEntries();
+                    // Start as a new task so it doesn't block the startup of the service
+                    Task.Factory.StartNew(HandleRetroactiveEntries);
                 }
             }
             catch (Exception)
@@ -76,11 +78,11 @@ namespace Seq.Client.EventLog
         {
             foreach (EventLogEntry entry in _eventLog.Entries)
             {
-                HandleEventLogEntry(entry);
+                HandleEventLogEntry(entry, _eventLog.Log);
             }
         }
 
-        private void HandleEventLogEntry(EventLogEntry entry)
+        private void HandleEventLogEntry(EventLogEntry entry, string logName)
         {
             // Don't send the entry to Seq if it doesn't match the filtered log levels, event IDs, or sources
             if (LogLevels != null && LogLevels.Count > 0 && !LogLevels.Contains(entry.EntryType))
@@ -92,7 +94,7 @@ namespace Seq.Client.EventLog
             if (Sources != null && Sources.Count > 0 && !Sources.Contains(entry.Source))
                 return;
 
-            PostRawEvents(entry.ToDto());
+            PostRawEvents(entry.ToDto(logName));
         }
 
         private static void PostRawEvents(RawEvents rawEvents)
