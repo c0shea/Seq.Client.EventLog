@@ -21,6 +21,11 @@ namespace Seq.Client.EventLog
             if (Environment.UserInteractive)
             {
                 var parameter = string.Concat(args);
+                if (string.IsNullOrWhiteSpace(parameter))
+                {
+                    parameter = null;
+                }
+
                 switch (parameter)
                 {
                     case "/install":

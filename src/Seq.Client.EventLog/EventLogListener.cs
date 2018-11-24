@@ -16,7 +16,7 @@ namespace Seq.Client.EventLog
         public string MachineName { get; set; }
         public bool ProcessRetroactiveEntries { get; set; }
         
-        // These properties allow for the filterting of events that will be sent to Seq.
+        // These properties allow for the filtering of events that will be sent to Seq.
         // If they are not specified in the JSON, all events in the log will be sent.
         public List<EventLogEntryType> LogLevels { get; set; }
         public List<int> EventIds { get; set; }
@@ -31,7 +31,7 @@ namespace Seq.Client.EventLog
         {
             if (string.IsNullOrWhiteSpace(LogName))
             {
-                throw new InvalidOperationException("A LogName must be specified for the listener.");
+                throw new InvalidOperationException($"A {nameof(LogName)} must be specified for the listener.");
             }
         }
 
@@ -79,7 +79,7 @@ namespace Seq.Client.EventLog
                 _cancel.Cancel();
                 _eventLog.EnableRaisingEvents = false;
 
-                // This would be a little racy if start and stop were ever called on differen threads, but
+                // This would be a little racy if start and stop were ever called on different threads, but
                 // this isn't done, currently.
                 _retroactiveLoadingTask?.Wait();
 
@@ -102,7 +102,7 @@ namespace Seq.Client.EventLog
                 {
                     if (_cancel.IsCancellationRequested)
                     {
-                        Serilog.Log.Warning("Cancelling retroactive event loading");
+                        Serilog.Log.Warning("Canceling retroactive event loading");
                         return;
                     }
 
