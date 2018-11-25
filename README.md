@@ -1,5 +1,7 @@
 # Seq.Client.EventLog
 
+[![Build status](https://coshea.visualstudio.com/Seq.Client.EventLog/_apis/build/status/Seq.Client.EventLog-.NET%20Desktop-CI)](https://coshea.visualstudio.com/Seq.Client.EventLog/_build/latest?definitionId=-1)
+
 [Seq](https://getseq.net/) is a fantastic tool for handling structured logs in .NET apps. There's a lot of value in having a centralized log repository that can ingest events from many sources.
 
 The trouble, however, is that applications beyond your control write useful information to the Windows Event Logs. That's where the EventLog service comes in. Define the logs and filters you care about and the service takes care of ingesting them into Seq.
