@@ -38,7 +38,9 @@ namespace Seq.Client.EventLog
                         Properties = new Dictionary<string, object>
                         {
                             { "MachineName", entry.MachineName },
+#pragma warning disable 618
                             { "EventId", entry.EventID },
+#pragma warning restore 618
                             { "InstanceId", entry.InstanceId },
                             { "Source", entry.Source },
                             { "Category", entry.CategoryNumber },
