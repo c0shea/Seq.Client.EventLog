@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Configuration.Install;
+using System.IO;
 using System.Reflection;
 using System.ServiceProcess;
 using System.Threading;
@@ -82,7 +83,35 @@ namespace Seq.Client.EventLog
 
         static void RunService()
         {
-            ServiceBase.Run(new Service());
+            var logFile = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                typeof(Program).Assembly.GetName().Name,
+                "ServiceLog.txt");
+
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.File(
+                    logFile,
+                    rollingInterval: RollingInterval.Day,
+                    rollOnFileSizeLimit: true,
+                    retainedFileCountLimit: 7,
+                    fileSizeLimitBytes: 10_000_000,
+                    shared: true)
+                .CreateLogger();
+
+            try
+            {
+                Log.Information("Running as service");
+                ServiceBase.Run(new Service());
+                Log.Information("Stopped");
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Exception thrown from service host");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
     }
 }
