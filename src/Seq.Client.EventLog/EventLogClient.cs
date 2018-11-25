@@ -2,6 +2,7 @@
 using System.IO;
 using System.Reflection;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace Seq.Client.EventLog
 {
@@ -34,6 +35,7 @@ namespace Seq.Client.EventLog
                 filePath = configuration;
             }
 
+            Log.Information("Loading listener configuration from {ConfigurationFilePath}", filePath);
             var file = File.ReadAllText(filePath);
 
             _eventLogListeners = JsonConvert.DeserializeObject<List<EventLogListener>>(file);
