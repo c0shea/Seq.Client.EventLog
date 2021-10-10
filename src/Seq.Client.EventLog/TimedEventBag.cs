@@ -7,6 +7,7 @@ namespace Seq.Client.EventLog
 {
     public class TimedEventBag
     {
+        //Todo - handle multiple event logs
         private readonly MemoryCache _cache;
         private readonly MemoryCacheEntryOptions _cachePolicy;
 
