@@ -10,11 +10,11 @@ namespace Seq.Client.EventLog
     {
         private List<EventLogListener> _eventLogListeners;
 
-        public void Start(string configuration = null)
+        public void Start(bool isInteractive = false, string configuration = null)
         {
             LoadListeners(configuration);
             ValidateListeners();
-            StartListeners();
+            StartListeners(isInteractive);
         }
 
         public void Stop()
@@ -49,11 +49,11 @@ namespace Seq.Client.EventLog
             }
         }
 
-        private void StartListeners()
+        private void StartListeners(bool isInteractive = false)
         {
             foreach (var listener in _eventLogListeners)
             {
-                listener.Start();
+                listener.Start(isInteractive);
             }
         }
 
