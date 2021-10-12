@@ -1,22 +1,29 @@
 ﻿[
   {
     "LogName": "Application",
-    "LogLevels": [ 1, 2 ],
-    "ProcessRetroactiveEntries": true
+    "LogLevels": [1, 2]
   },
   {
     "LogName": "Security",
-    "LogLevels": [ 16 ],
-    "ProcessRetroactiveEntries": true
+    "LogLevels": [16],
+    "ProjectKey": "TEST",
+    "Priority": "High",
+    "Responders": "MattM",
+    "Tags": "Extra,Secure,Logging",
+    "InitialTimeEstimate": "1h",
+    "RemainingTimeEstimate": "1h",
+    "DueDate": "7d"
+  },
+  {
+    "LogName": "Security",
+    "LogLevels": [16]
   },
   {
     "LogName": "Setup",
-    "LogLevels": [ 1, 2 ],
-    "ProcessRetroactiveEntries": true
+    "LogLevels": [1, 2]
   },
   {
     "LogName": "System",
-    "LogLevels": [ 1, 2 ],
-    "ProcessRetroactiveEntries": true
+    "LogLevels": [1, 2]
   }
 ]

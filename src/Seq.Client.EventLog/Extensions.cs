@@ -1,55 +1,52 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
+using System.Linq;
 using Lurgle.Logging;
 
 namespace Seq.Client.EventLog
 {
     public static class Extensions
     {
-        public static LurgLevel MapLogLevel(byte? type)
+        public static LurgLevel MapLogLevel(EventRecord entry)
         {
-            switch (type)
+            if (entry.Level == null && entry.Keywords == null)
+                return LurgLevel.Debug;
+
+            if (entry.Keywords != null)
             {
-                case (byte?)EventLogEntryType.Information:
-                    return LurgLevel.Information;
-                case (byte?)EventLogEntryType.Warning:
+                if (((StandardEventKeywords)entry.Keywords).HasFlag(StandardEventKeywords.AuditSuccess))
+                    return LurgLevel.Error; 
+                
+                if (((StandardEventKeywords)entry.Keywords).HasFlag(StandardEventKeywords.AuditFailure))
                     return LurgLevel.Warning;
-                case (byte?)EventLogEntryType.Error:
-                    return LurgLevel.Error;
-                case (byte?)EventLogEntryType.SuccessAudit:
+            }
+
+            // ReSharper disable once PossibleInvalidOperationException
+            switch ((byte)entry.Level)
+            {
+                case (byte)EventLogEntryType.Information:
                     return LurgLevel.Information;
-                case (byte?)EventLogEntryType.FailureAudit:
+                case (byte)EventLogEntryType.Warning:
+                    return LurgLevel.Warning;
+                case (byte)EventLogEntryType.Error:
+                    return LurgLevel.Error;
+                case (byte)EventLogEntryType.SuccessAudit:
+                    return LurgLevel.Information;
+                case (byte)EventLogEntryType.FailureAudit:
                     return LurgLevel.Warning;
                 default:
                     return LurgLevel.Debug;
             }
         }
 
-//        public static RawEvents ToDto(this EventLogEntry entry, string logName)
-//        {
-//            return new RawEvents
-//            {
-//                Events = new[]
-//                {
-//                    new RawEvent
-//                    {
-//                        Timestamp = entry.TimeGenerated,
-//                        Level = MapLogLevel(entry.EntryType),
-//                        MessageTemplate = entry.Message,
-//                        Properties = new Dictionary<string, object>
-//                        {
-//                            { "MachineName", entry.MachineName },
-//#pragma warning disable 618
-//                            { "EventId", entry.EventID },
-//#pragma warning restore 618
-//                            { "InstanceId", entry.InstanceId },
-//                            { "Source", entry.Source },
-//                            { "Category", entry.CategoryNumber },
-//                            { "EventLogName", logName }
-//                        }
-//                    },
-//                }
-//            };
-//        }
+        public static IEnumerable<string> GetArray(string value)
+        {
+            return (value ?? "")
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(t => t.Trim())
+                .ToArray();
+        }
     }
 }

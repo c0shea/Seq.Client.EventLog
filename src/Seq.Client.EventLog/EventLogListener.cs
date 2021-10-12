@@ -1,59 +1,58 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.Eventing.Reader;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 using Lurgle.Logging;
-using Timer = System.Timers.Timer;
 
 namespace Seq.Client.EventLog
 {
     public class EventLogListener
     {
+        private readonly CancellationTokenSource _cancel = new CancellationTokenSource();
+        private EventLogQuery _eventLog;
         private bool _isInteractive;
+        private volatile bool _started;
+        private EventLogWatcher _watcher;
 
         public string LogName { get; set; }
         public string MachineName { get; set; }
-        public bool ProcessRetroactiveEntries { get; set; }
 
         // These properties allow for the filtering of events that will be sent to Seq.
         // If they are not specified in the JSON, all events in the log will be sent.
         public List<byte> LogLevels { get; set; }
         public List<int> EventIds { get; set; }
         public List<string> Sources { get; set; }
+        public string ProjectKey { get; set; }
+        public string Priority { get; set; }
+        public string Responders { get; set; }
+        public string Tags { get; set; }
 
-
-        private readonly CancellationTokenSource _cancel = new CancellationTokenSource();
-        private EventLogQuery _eventLog;
-        private volatile bool _started;
-        private EventLogWatcher _watcher;
+        public string InitialTimeEstimate { get; set; }
+        public string RemainingTimeEstimate { get; set; }
+        public string DueDate { get; set; }
 
         public void Validate()
         {
             if (string.IsNullOrWhiteSpace(LogName))
-            {
                 throw new InvalidOperationException($"A {nameof(LogName)} must be specified for the listener.");
-            }
         }
 
         public void Start(bool isInteractive = false)
         {
             try
             {
-                Log.Information().Add("Starting listener for {LogName:l} on {MachineName:l}", LogName,
-                    MachineName ?? ".");
+                Log.Information().AddProperty("LogName", LogName).AddProperty("LogLevels", LogLevels)
+                    .AddProperty("EventIds", EventIds).AddProperty("Sources", Sources)
+                    .AddProperty("ProjectKey", ProjectKey, false, false).AddProperty("Priority", Priority, false, false)
+                    .AddProperty("Responders", Responders, false, false).AddProperty("Tags", Extensions.GetArray(Tags), false, false)
+                    .AddProperty("InitialTimeEstimate", InitialTimeEstimate, false, false)
+                    .AddProperty("RemainingTimeEstimate", RemainingTimeEstimate, false, false).AddProperty("DueDate", DueDate, false, false)
+                    .Add("Starting listener for {LogName:l} on {MachineName:l}", LogName);
 
                 //Update this to calculate a query
-                _eventLog = new EventLogQuery("Security", PathType.LogName,
-                    "*[System[band(Keywords,9007199254740992) and (EventID=4624)]]");
-
-                //if (ProcessRetroactiveEntries)
-                //{
-                //    // Start as a new task so it doesn't block the startup of the service. This has
-                //    // to go on its own thread to avoid deadlocking via `Wait()`/`Result`.
-                //    _retroactiveLoadingTask = Task.Factory.StartNew(SendRetroactiveEntries, TaskCreationOptions.LongRunning);
-                //}
+                _eventLog = new EventLogQuery(LogName, PathType.LogName, "*");
 
                 _isInteractive = isInteractive;
                 _watcher = new EventLogWatcher(_eventLog);
@@ -63,8 +62,9 @@ namespace Seq.Client.EventLog
             }
             catch (Exception ex)
             {
-                Log.Exception(ex).Add("Failed to start listener for {LogName:l} on {MachineName:l}: {Message:l}",
-                    LogName, MachineName ?? ".", ex.Message);
+                Log.Exception(ex).AddProperty("Message", ex.Message).Add(
+                    "Failed to start listener for {LogName:l} on {MachineName:l}: {Message:l}",
+                    LogName);
             }
         }
 
@@ -79,12 +79,7 @@ namespace Seq.Client.EventLog
                 _watcher.Enabled = false;
                 _watcher.Dispose();
 
-                // This would be a little racy if start and stop were ever called on different threads, but
-                // this isn't done, currently.
-                //_retroactiveLoadingTask?.Wait();
-
                 Log.Debug().Add("Listener stopped for {LogName:l} on {MachineName:l}", LogName, MachineName ?? ".");
-
             }
             catch (Exception ex)
             {
@@ -92,39 +87,12 @@ namespace Seq.Client.EventLog
             }
         }
 
-        //private void SendRetroactiveEntries()
-        //{
-        //    try
-        //    {
-        //        using (var eventLog = OpenEventLog())
-        //        {
-        //            Serilog.Log.Information("Processing {EntryCount} retroactive entries in {LogName}", eventLog.Entries.Count, LogName);
-
-        //            foreach (EventLogEntry entry in eventLog.Entries)
-        //            {
-        //                if (_cancel.IsCancellationRequested)
-        //                {
-        //                    Serilog.Log.Warning("Canceling retroactive event loading");
-        //                    return;
-        //                }
-
-        //                HandleEventLogEntry(entry, eventLog.Log).GetAwaiter().GetResult();
-        //            }
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Serilog.Log.Error(ex, "Failed to send retroactive entries in {LogName} on {MachineName}", LogName, MachineName ?? ".");
-        //    }
-        //}
-
         private async void OnEntryWritten(object sender, EventRecordWrittenEventArgs args)
         {
             try
             {
                 //Ensure that events are new and have not been seen already. This addresses a scenario where event logs can repeatedly pass events to the handler.
-                if (args.EventRecord != null && args.EventRecord.TimeCreated >= ServiceManager.ServiceStart &&
-                    !ServiceManager.EventList.Contains(args.EventRecord.RecordId))
+                if (args.EventRecord != null && args.EventRecord.TimeCreated >= ServiceManager.ServiceStart)
                     await Task.Run(() => HandleEventLogEntry(args.EventRecord));
                 else if (args.EventRecord != null && args.EventRecord.TimeCreated < ServiceManager.ServiceStart)
                     ServiceManager.OldEvents++;
@@ -139,8 +107,6 @@ namespace Seq.Client.EventLog
 
         private void HandleEventLogEntry(EventRecord entry)
         {
-            ServiceManager.EventList.Add(entry.RecordId);
-
             // Don't send the entry to Seq if it doesn't match the filtered log levels, event IDs, or sources
             if (LogLevels != null && LogLevels.Count > 0 && entry.Level != null &&
                 !LogLevels.Contains((byte)entry.Level))
@@ -164,14 +130,79 @@ namespace Seq.Client.EventLog
 
             try
             {
+                Log.Level(Extensions.MapLogLevel(entry)).AddProperty("LogName", LogName)
+                    .SetTimestamp(entry.TimeCreated ?? DateTime.Now)
+                    .AddProperty("Provider", entry.ProviderName).AddProperty("EventId", entry.Id)
+                    .AddProperty("KeywordNames", entry.KeywordsDisplayNames)
+                    .AddProperty("EventLevel", entry.LevelDisplayName)
+                    .AddProperty("EventLevelId", entry.Level).AddProperty(ParseXml(entry.ToXml()))
+                    .AddProperty("Description", entry.FormatDescription())
+                    .AddProperty("Summary", GetMessage(entry.FormatDescription()))
+                    .AddProperty("ProjectKey", ProjectKey, false, false).AddProperty("Priority", Priority, false, false)
+                    .AddProperty("Responders", Responders, false, false).AddProperty("Tags", Extensions.GetArray(Tags), false, false)
+                    .AddProperty("InitialTimeEstimate", InitialTimeEstimate, false, false)
+                    .AddProperty("RemainingTimeEstimate", RemainingTimeEstimate, false, false).AddProperty("DueDate", DueDate, false, false)
+                    .Add("[{LogName:l}] - ({EventLevel:l}) - Event Id {EventId} - {Summary:l}");
 
-                Log.Level(Extensions.MapLogLevel(entry.Level)).AddProperty("Xml", entry.ToXml())
-                    .Add(entry.FormatDescription());
+                ServiceManager.EventsProcessed++;
             }
             catch (Exception ex)
             {
                 Log.Exception(ex).Add("Error parsing event: {Message:l}", ex.Message);
             }
+        }
+
+        private Dictionary<string, object> ParseXml(string xml)
+        {
+            var result = new Dictionary<string, object>();
+            if (string.IsNullOrEmpty(xml))
+                return result;
+
+            try
+            {
+                var xmlDoc = XElement.Parse(xml);
+                return ProcessNode(xmlDoc);
+            }
+            catch (Exception ex)
+            {
+                Log.Exception(ex).Add(ex.Message);
+                return new Dictionary<string, object>();
+            }
+        }
+
+        private Dictionary<string, object> ProcessNode(XElement element, int depth = 0, string name = null)
+        {
+            var result = new Dictionary<string, object>();
+            var nodeName = !string.IsNullOrEmpty(name) ? name : element.Name.LocalName;
+
+            if (!element.HasElements && !element.IsEmpty)
+                result.Add(nodeName, element.Value);
+            else
+                foreach (var descendant in element.Elements())
+                foreach (var node in ProcessNode(descendant, depth + 1,
+                    depth > 0 && !nodeName.Equals("System", StringComparison.OrdinalIgnoreCase)
+                        ? string.Format($"{nodeName}-{GetName(descendant)}")
+                        : GetName(descendant)))
+                    result.Add(node.Key, node.Value);
+
+            return result;
+        }
+
+        private string GetName(XElement element)
+        {
+            if (element.HasAttributes &&
+                element.FirstAttribute.Name.LocalName.Equals("Name", StringComparison.OrdinalIgnoreCase))
+                return element.FirstAttribute.Value;
+            return element.Name.LocalName;
+        }
+
+        private string GetMessage(string message)
+        {
+            return message.Contains(Environment.NewLine) &&
+                   !string.IsNullOrEmpty(message.Substring(0,
+                       message.IndexOf(Environment.NewLine, StringComparison.Ordinal)))
+                ? message.Substring(0, message.IndexOf(Environment.NewLine, StringComparison.Ordinal))
+                : message;
         }
     }
 }

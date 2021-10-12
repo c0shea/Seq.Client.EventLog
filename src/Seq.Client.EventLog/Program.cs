@@ -9,13 +9,13 @@ using Lurgle.Logging;
 
 namespace Seq.Client.EventLog
 {
-    static class Program
+    internal static class Program
     {
         /// <summary>
-        /// The main entry point for the application.
-        /// The service can be installed or uninstalled from the command line
-        /// by passing the /install or /uninstall argument, and can be run
-        /// interactively by specifying the path to the JSON configuration file.
+        ///     The main entry point for the application.
+        ///     The service can be installed or uninstalled from the command line
+        ///     by passing the /install or /uninstall argument, and can be run
+        ///     interactively by specifying the path to the JSON configuration file.
         /// </summary>
         public static void Main(string[] args)
         {
@@ -23,10 +23,7 @@ namespace Seq.Client.EventLog
             if (Environment.UserInteractive)
             {
                 var parameter = string.Concat(args);
-                if (string.IsNullOrWhiteSpace(parameter))
-                {
-                    parameter = null;
-                }
+                if (string.IsNullOrWhiteSpace(parameter)) parameter = null;
 
                 switch (parameter)
                 {
@@ -47,10 +44,10 @@ namespace Seq.Client.EventLog
             }
         }
 
-        static void RunInteractive(string configFilePath)
+        private static void RunInteractive(string configFilePath)
         {
             Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
-                logType: new List<LogType> {LogType.Console, LogType.Seq}, logSeqServer: Config.SeqServer,
+                logType: new List<LogType> { LogType.Console, LogType.Seq }, logSeqServer: Config.SeqServer,
                 logSeqApiKey: Config.SeqApiKey, logLevel: LurgLevel.Verbose, logLevelConsole: LurgLevel.Verbose,
                 logLevelSeq: LurgLevel.Verbose));
 
@@ -88,7 +85,7 @@ namespace Seq.Client.EventLog
             }
         }
 
-        static void RunService()
+        private static void RunService()
         {
             var logFolder = Config.LogFolder;
 
@@ -101,7 +98,7 @@ namespace Seq.Client.EventLog
 
             var logFile = Path.Combine(logFolder ?? string.Empty, "ServiceLog.txt");
             Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
-                logType: new List<LogType> {LogType.File, LogType.Seq}, logDays: 7, logName: Config.AppName,
+                logType: new List<LogType> { LogType.File, LogType.Seq }, logDays: 7, logName: Config.AppName,
                 logFolder: Config.LogFolder, logSeqServer: Config.SeqServer, logSeqApiKey: Config.SeqApiKey,
                 logLevel: LurgLevel.Verbose, logLevelFile: LurgLevel.Verbose, logLevelSeq: LurgLevel.Verbose));
 
@@ -119,7 +116,6 @@ namespace Seq.Client.EventLog
                 ServiceManager.Stop();
                 Log.Debug()
                     .Add("{AppName:l} v{AppVersion:l} Stopped", Config.AppName, Config.AppVersion);
-
             }
             catch (Exception ex)
             {

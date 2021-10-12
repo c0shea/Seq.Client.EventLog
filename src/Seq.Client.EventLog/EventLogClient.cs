@@ -1,12 +1,12 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using Lurgle.Logging;
 using Newtonsoft.Json;
-using Serilog;
 
 namespace Seq.Client.EventLog
 {
-    class EventLogClient
+    internal class EventLogClient
     {
         private List<EventLogListener> _eventLogListeners;
 
@@ -35,7 +35,7 @@ namespace Seq.Client.EventLog
                 filePath = configuration;
             }
 
-            Log.Information("Loading listener configuration from {ConfigurationFilePath}", filePath);
+            Log.Information().Add("Loading listener configuration from {ConfigurationFilePath:l}", filePath);
             var file = File.ReadAllText(filePath);
 
             _eventLogListeners = JsonConvert.DeserializeObject<List<EventLogListener>>(file);
@@ -43,26 +43,17 @@ namespace Seq.Client.EventLog
 
         private void ValidateListeners()
         {
-            foreach (var listener in _eventLogListeners)
-            {
-                listener.Validate();
-            }
+            foreach (var listener in _eventLogListeners) listener.Validate();
         }
 
         private void StartListeners(bool isInteractive = false)
         {
-            foreach (var listener in _eventLogListeners)
-            {
-                listener.Start(isInteractive);
-            }
+            foreach (var listener in _eventLogListeners) listener.Start(isInteractive);
         }
 
         private void StopListeners()
         {
-            foreach (var listener in _eventLogListeners)
-            {
-                listener.Stop();
-            }
+            foreach (var listener in _eventLogListeners) listener.Stop();
         }
     }
 }
