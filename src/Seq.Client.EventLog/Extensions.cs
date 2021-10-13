@@ -54,8 +54,7 @@ namespace Seq.Client.EventLog
         {
             if (string.IsNullOrEmpty(remoteServer) || remoteServer == ".")
                 return "Local";
-            else
-                return string.Format($"\\\\{remoteServer}");
+            return string.Format($"\\\\{remoteServer}");
         }
 
         public static Dictionary<string, object> ParseXml(string xml)

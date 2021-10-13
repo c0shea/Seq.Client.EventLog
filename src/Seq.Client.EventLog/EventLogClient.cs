@@ -38,7 +38,8 @@ namespace Seq.Client.EventLog
                 filePath = configuration;
             }
 
-            Log.Information().Add("Loading listener configuration from {ConfigurationFilePath:l} on {MachineName:l} ...", filePath);
+            Log.Information()
+                .Add("Loading listener configuration from {ConfigurationFilePath:l} on {MachineName:l} ...", filePath);
             var file = File.ReadAllText(filePath);
 
             _eventLogListeners = JsonConvert.DeserializeObject<List<EventLogListener>>(file);
@@ -64,8 +65,7 @@ namespace Seq.Client.EventLog
 
             try
             {
-                var json = JsonConvert.SerializeObject(_eventLogListeners, Formatting.Indented,
-                    new JsonSerializerSettings() { });
+                var json = JsonConvert.SerializeObject(_eventLogListeners, Formatting.Indented);
 
                 Log.Information()
                     .Add("Saving listener configuration to {ConfigurationFilePath:l} on {MachineName:l} ...", filePath);

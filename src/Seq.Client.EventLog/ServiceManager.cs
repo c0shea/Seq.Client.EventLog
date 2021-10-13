@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Timers;
 using Lurgle.Logging;
+
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Seq.Client.EventLog
@@ -13,12 +14,14 @@ namespace Seq.Client.EventLog
         public static long LastProcessed;
         public static long UnhandledEvents;
         public static long OldEvents;
+
         public static long EmptyEvents;
+
         //This will be set if any listener has ProcessRetroactiveEntries enabled
         public static bool SaveOnExit;
         private static bool _isInteractive;
         private static DateTime _lastTime = DateTime.Now;
-        
+
 
         public static void Start(bool isInteractive)
         {
@@ -27,7 +30,8 @@ namespace Seq.Client.EventLog
             if (Config.HeartbeatInterval <= 0)
             {
                 if (Config.IsDebug)
-                    Log.Debug().AddProperty("HeartbeatName", $"{Config.AppName} Heartbeat").Add("[{HeartbeatName:l} - {MachineName:l}] Heartbeat is disabled ...");
+                    Log.Debug().AddProperty("HeartbeatName", $"{Config.AppName} Heartbeat")
+                        .Add("[{HeartbeatName:l} - {MachineName:l}] Heartbeat is disabled ...");
                 return;
             }
 
@@ -52,7 +56,8 @@ namespace Seq.Client.EventLog
 
             if (timeNow.Day != _lastTime.Day)
             {
-                Log.Debug().AddProperty("HeartbeatName", $"{Config.AppName} Heartbeat").Add("[{HeartbeatName:l} - {MachineName:l}] Day rollover, resetting counters ...");
+                Log.Debug().AddProperty("HeartbeatName", $"{Config.AppName} Heartbeat")
+                    .Add("[{HeartbeatName:l} - {MachineName:l}] Day rollover, resetting counters ...");
                 EventsProcessed = 0;
                 LastProcessed = 0;
                 UnhandledEvents = 0;
@@ -67,7 +72,8 @@ namespace Seq.Client.EventLog
                 .AddProperty("OldEvents", OldEvents)
                 .AddProperty("EmptyEvents", EmptyEvents)
                 .AddProperty("UnhandledEvents", UnhandledEvents)
-                .AddProperty("NextTime", timeNow.AddMilliseconds(_isInteractive ? 60000 : Config.HeartbeatInterval * 1000))
+                .AddProperty("NextTime",
+                    timeNow.AddMilliseconds(_isInteractive ? 60000 : Config.HeartbeatInterval * 1000))
                 .Add(
                     Config.IsDebug
                         ? "[{HeartbeatName:l} - {MachineName:l}] - Events Processed: {EventsProcessed}, Total Processed: {TotalProcessed}, " +

@@ -13,7 +13,8 @@
     "Tags": "Extra,Secure,Logging",
     "InitialTimeEstimate": "1h",
     "RemainingTimeEstimate": "1h",
-    "DueDate": "7d"
+    "DueDate": "7d",
+    "StoreLastEntry": true 
   },
   //{
   //  "LogName": "Security",
@@ -22,7 +23,7 @@
   //},
   {
     "LogName": "Setup",
-    "ProcessRetroactiveEntries": true 
+    "ProcessRetroactiveEntries": true
   },
   {
     "LogName": "System",

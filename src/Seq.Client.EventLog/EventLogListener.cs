@@ -3,24 +3,27 @@ using System.Collections.Generic;
 using System.Diagnostics.Eventing.Reader;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Xml.Linq;
 using Lurgle.Logging;
+
 // ReSharper disable AutoPropertyCanBeMadeGetOnly.Global
 // ReSharper disable UnusedAutoPropertyAccessor.Global
 // ReSharper disable MemberCanBePrivate.Global
 
 namespace Seq.Client.EventLog
 {
+    // ReSharper disable once ClassNeverInstantiated.Global
     public class EventLogListener
     {
         private readonly CancellationTokenSource _cancel = new CancellationTokenSource();
         private EventLogQuery _eventLog;
+
+        // ReSharper disable once NotAccessedField.Local
         private bool _isInteractive;
         private volatile bool _started;
         private EventLogWatcher _watcher;
 
         public string LogName { get; set; }
-        
+
         //Logged as RemoteServer to avoid conflict with the inbuilt MachineName property
         public string MachineName { get; set; }
 
@@ -42,6 +45,10 @@ namespace Seq.Client.EventLog
         public string DueDate { get; set; }
 
         public bool ProcessRetroactiveEntries { get; set; }
+
+        //When ProcessRetroactiveEntries isn't desirable, but processing events that occurred while the service was stopped is needed, use StoreLastEntry. ProcessRetroactiveEntries = true always supersedes this.
+        public bool StoreLastEntry { get; set; }
+
         //This is used to save the current place in the logs on service exit
         public EventBookmark CurrentBookmark { get; set; }
 
@@ -74,53 +81,7 @@ namespace Seq.Client.EventLog
                 if (string.IsNullOrEmpty(MachineName))
                     session = new EventLogSession(MachineName);
                 _eventLog.Session = session;
-
-                switch (ProcessRetroactiveEntries)
-                {
-                    case true when CurrentBookmark != null:
-                        var bookmarkChecker = new EventLogReader(_eventLog);
-                        //Go back a position to allow the bookmark to be read
-                        bookmarkChecker.Seek(CurrentBookmark, -1);
-                        var checkBookmark = bookmarkChecker.ReadEvent();
-                        if (checkBookmark != null)
-                        {
-                            checkBookmark.Dispose();
-                            Log.Debug().Add("Logging from last bookmark for {LogName:l} on {MachineName:l}", LogName);
-                            _watcher = new EventLogWatcher(_eventLog, CurrentBookmark, true);
-
-                            ServiceManager.SaveOnExit = true;
-                        }
-                        else
-                        {
-                            Log.Debug().Add("Cannot find last bookmark for {LogName:l} on {MachineName:l} - processing new events", LogName);
-                            _watcher = new EventLogWatcher(_eventLog);
-                        }
-
-                        ServiceManager.SaveOnExit = true;
-                        bookmarkChecker.Dispose();
-                        break;
-                    case true:
-                        var getFirstEvent = new EventLogReader(_eventLog);
-                        var firstEvent = getFirstEvent.ReadEvent();
-                        if (firstEvent != null)
-                        {
-                            Log.Debug().Add("Logging from first logged event for {LogName:l} on {MachineName:l}", LogName);
-                            _watcher = new EventLogWatcher(_eventLog, firstEvent.Bookmark, true);
-                        }
-                        else
-                        {
-                            Log.Debug().Add("Cannot determine first event for {LogName:l} on {MachineName:l} - processing new events", LogName);
-                            _watcher = new EventLogWatcher(_eventLog);
-                        }
-
-                        ServiceManager.SaveOnExit = true;
-                        break;
-                    default:
-                        Log.Debug().Add("Processing new events for {LogName:l} on {MachineName:l}", LogName);
-                        _watcher = new EventLogWatcher(_eventLog);
-                        break;
-                }
-
+                _watcher = GetWatcherConfig();
                 _watcher.EventRecordWritten += OnEntryWritten;
                 _watcher.Enabled = true;
                 _started = true;
@@ -134,6 +95,50 @@ namespace Seq.Client.EventLog
             }
         }
 
+        private EventLogWatcher GetWatcherConfig()
+        {
+            var eventLog = new EventLogReader(_eventLog);
+
+            if (CurrentBookmark != null && (ProcessRetroactiveEntries || StoreLastEntry))
+            {
+                //Go back a position to allow the bookmark to be read
+                ServiceManager.SaveOnExit = true;
+                eventLog.Seek(CurrentBookmark, -1);
+                var checkBookmark = eventLog.ReadEvent();
+
+                if (checkBookmark != null)
+                {
+                    checkBookmark.Dispose();
+                    Log.Debug().Add("Logging from last bookmark for {LogName:l} on {MachineName:l}", LogName);
+                    return new EventLogWatcher(_eventLog, CurrentBookmark, true);
+                }
+
+                Log.Debug().Add(
+                    "Cannot find last bookmark for {LogName:l} on {MachineName:l} - processing new events",
+                    LogName);
+            }
+            else if (ProcessRetroactiveEntries)
+            {
+                ServiceManager.SaveOnExit = true;
+                var firstEvent = eventLog.ReadEvent();
+                if (firstEvent != null)
+                {
+                    Log.Debug().Add("Logging from first logged event for {LogName:l} on {MachineName:l}", LogName);
+                    return new EventLogWatcher(_eventLog, firstEvent.Bookmark, true);
+                }
+
+                Log.Debug().Add(
+                    "Cannot determine first event for {LogName:l} on {MachineName:l} - processing new events",
+                    LogName);
+            }
+            else
+            {
+                Log.Debug().Add("Processing new events for {LogName:l} on {MachineName:l}", LogName);
+            }
+
+            return new EventLogWatcher(_eventLog);
+        }
+
         public void Stop()
         {
             try
@@ -145,7 +150,9 @@ namespace Seq.Client.EventLog
                 _watcher.Enabled = false;
                 _watcher.Dispose();
 
-                Log.Debug().AddProperty("RemoteServer", MachineName, false, false).Add("{ListenerType:l} listener stopped for {LogName:l} on {MachineName:l}", Extensions.GetListenerType(MachineName), LogName);
+                Log.Debug().AddProperty("RemoteServer", MachineName, false, false).Add(
+                    "{ListenerType:l} listener stopped for {LogName:l} on {MachineName:l}",
+                    Extensions.GetListenerType(MachineName), LogName);
             }
             catch (Exception ex)
             {
@@ -161,9 +168,11 @@ namespace Seq.Client.EventLog
             try
             {
                 //Ensure that events are new and have not been seen already. This addresses a scenario where event logs can repeatedly pass events to the handler.
-                if (args.EventRecord != null && (ProcessRetroactiveEntries || !ProcessRetroactiveEntries && args.EventRecord.TimeCreated >= ServiceManager.ServiceStart))
+                if (args.EventRecord != null && (ProcessRetroactiveEntries || StoreLastEntry || !ProcessRetroactiveEntries &&
+                    args.EventRecord.TimeCreated >= ServiceManager.ServiceStart))
                     await Task.Run(() => HandleEventLogEntry(args.EventRecord));
-                else if (args.EventRecord != null && !ProcessRetroactiveEntries && args.EventRecord.TimeCreated < ServiceManager.ServiceStart)
+                else if (args.EventRecord != null && !ProcessRetroactiveEntries &&
+                         args.EventRecord.TimeCreated < ServiceManager.ServiceStart)
                     ServiceManager.OldEvents++;
                 else if (args.EventRecord == null)
                     ServiceManager.EmptyEvents++;
@@ -202,7 +211,7 @@ namespace Seq.Client.EventLog
 
             try
             {
-                if (ProcessRetroactiveEntries)
+                if (ProcessRetroactiveEntries || StoreLastEntry)
                     CurrentBookmark = entry.Bookmark;
 
                 Log.Level(Extensions.MapLogLevel(entry))
