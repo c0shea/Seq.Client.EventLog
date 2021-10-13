@@ -28,7 +28,7 @@ namespace Seq.Client.EventLog
         public string MachineName { get; set; }
 
         public string MessageTemplate { get; set; } =
-            "[{LogName:l}] - ({EventLevel:l}) - Event Id {EventId} - {Summary:l}";
+            "[{LogName:l}] - ({EventLevel:l}) - Event Id {EventId} - {EventSummary:l}";
 
         // These properties allow for the filtering of events that will be sent to Seq.
         // If they are not specified in the JSON, all events in the log will be sent.
@@ -227,8 +227,8 @@ namespace Seq.Client.EventLog
                     .AddProperty("ListenerType", Extensions.GetListenerType(MachineName))
                     .AddProperty("EventLevel", entry.LevelDisplayName)
                     .AddProperty("EventLevelId", entry.Level)
-                    .AddProperty("Description", entry.FormatDescription())
-                    .AddProperty("Summary", Extensions.GetMessage(entry.FormatDescription()))
+                    .AddProperty("EventDescription", entry.FormatDescription())
+                    .AddProperty("EventSummary", Extensions.GetMessage(entry.FormatDescription()))
                     .AddProperty("ProjectKey", ProjectKey, false, false)
                     .AddProperty("Priority", Priority, false, false)
                     .AddProperty("Responders", Responders, false, false)

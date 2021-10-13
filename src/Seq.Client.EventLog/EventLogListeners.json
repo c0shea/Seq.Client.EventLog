@@ -6,7 +6,7 @@
   {
     "LogName": "Security",
     //"LogLevels": [16],
-    "MessageTemplate": "[{LogName:l}] - {ListenerType:l} - ({EventLevel:l}) - Event Id {EventId} - {Summary:l}",
+    "MessageTemplate": "[{LogName:l}] - {ListenerType:l} - ({EventLevel:l}) - Event Id {EventId} - {EventSummary:l}",
     "ProjectKey": "TEST",
     "Priority": "High",
     "Responders": "MattM",
