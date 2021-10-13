@@ -5,7 +5,8 @@
   },
   {
     "LogName": "Security",
-    "LogLevels": [16],
+    //"LogLevels": [16],
+    "MessageTemplate": "[{LogName:l}] - {ListenerType:l} - ({EventLevel:l}) - Event Id {EventId} - {Summary:l}",
     "ProjectKey": "TEST",
     "Priority": "High",
     "Responders": "MattM",
@@ -14,13 +15,14 @@
     "RemainingTimeEstimate": "1h",
     "DueDate": "7d"
   },
-  {
-    "LogName": "Security",
-    "LogLevels": [16]
-  },
+  //{
+  //  "LogName": "Security",
+  //  "LogLevels": [ 16 ],
+  //  "MachineName":  "TESTPC" 
+  //},
   {
     "LogName": "Setup",
-    "LogLevels": [1, 2]
+    "ProcessRetroactiveEntries": true 
   },
   {
     "LogName": "System",

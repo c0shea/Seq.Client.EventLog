@@ -54,8 +54,8 @@ namespace Seq.Client.EventLog
             try
             {
                 Log.Debug()
-                    .Add("{AppName:l} v{AppVersion:l} Starting ...", Config.AppName, Config.AppVersion);
-                Log.Debug().Add("Running interactively");
+                    .Add("{AppName:l} v{AppVersion:l} Starting in interactive mode on {MachineName:l} ...",
+                        Config.AppName, Config.AppVersion);
 
                 var client = new EventLogClient();
                 client.Start(true, configFilePath);
@@ -65,18 +65,20 @@ namespace Seq.Client.EventLog
                 Console.CancelKeyPress += (s, e) =>
                 {
                     Log.Debug().Add("Ctrl+C pressed, stopping");
-                    client.Stop();
+                    client.Stop(configFilePath);
                     done.Set();
                 };
 
                 done.WaitOne();
                 ServiceManager.Stop();
                 Log.Debug()
-                    .Add("{AppName:l} v{AppVersion:l} Stopped", Config.AppName, Config.AppVersion);
+                    .Add("{AppName:l} v{AppVersion:l} Stopped in interactive  mode on {MachineName:l}", Config.AppName,
+                        Config.AppVersion);
             }
             catch (Exception ex)
             {
-                Log.Exception(ex).Add("An unhandled exception occurred");
+                Log.Exception(ex).AddProperty("Message", ex.Message)
+                    .Add("An unhandled exception occurred on {MachineName:l}: {Message:l}");
                 Environment.ExitCode = 1;
             }
             finally
@@ -87,39 +89,58 @@ namespace Seq.Client.EventLog
 
         private static void RunService()
         {
-            var logFolder = Config.LogFolder;
+            var logFile = string.Empty;
+            if (Config.LogToFile)
+            {
+                var logFolder = Config.LogFolder;
 
-            if (string.IsNullOrEmpty(logFolder))
-                logFolder = Path.Combine(
-                    Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty, "Logs");
+                if (string.IsNullOrEmpty(logFolder))
+                    logFolder = Path.Combine(
+                        Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty, "Logs");
 
-            if (!Directory.Exists(logFolder))
-                Directory.CreateDirectory(logFolder);
+                if (!Directory.Exists(logFolder))
+                    Directory.CreateDirectory(logFolder);
 
-            var logFile = Path.Combine(logFolder ?? string.Empty, "ServiceLog.txt");
-            Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
-                logType: new List<LogType> { LogType.File, LogType.Seq }, logDays: 7, logName: Config.AppName,
-                logFolder: Config.LogFolder, logSeqServer: Config.SeqServer, logSeqApiKey: Config.SeqApiKey,
-                logLevel: LurgLevel.Verbose, logLevelFile: LurgLevel.Verbose, logLevelSeq: LurgLevel.Verbose));
+                logFile = Path.Combine(logFolder ?? string.Empty, "ServiceLog.txt");
+
+                Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
+                    logType: new List<LogType> { LogType.File, LogType.Seq }, logDays: 7, logName: Config.AppName,
+                    logFolder: Config.LogFolder, logSeqServer: Config.SeqServer, logSeqApiKey: Config.SeqApiKey,
+                    logLevel: LurgLevel.Verbose, logLevelFile: LurgLevel.Verbose, logLevelSeq: LurgLevel.Verbose));
+            }
+            else
+            {
+                Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
+                    logType: new List<LogType> { LogType.Seq }, logSeqServer: Config.SeqServer,
+                    logSeqApiKey: Config.SeqApiKey,
+                    logLevel: LurgLevel.Verbose, logLevelSeq: LurgLevel.Verbose));
+            }
 
             try
             {
                 Log.Debug()
-                    .Add("{AppName:l} v{AppVersion:l} Starting ...", Config.AppName, Config.AppVersion);
+                    .Add("{AppName:l} v{AppVersion:l} Starting as service on {MachineName:l} ...", Config.AppName,
+                        Config.AppVersion);
                 Log.Debug()
-                    .Add(
-                        "LogFolder: {LogFolder:l}, LogPath: {LogPath:l}, Seq Server: {SeqServer:l}, Api Key: {ApiKeySet}",
-                        Config.LogFolder, logFile, Config.SeqServer, !string.IsNullOrEmpty(Config.SeqApiKey));
+                    .AddProperty("LogFolder", Config.LogFolder, false, false)
+                    .AddProperty("LogPath", logFile, false, false)
+                    .AddProperty("SeqServer", Config.SeqServer)
+                    .AddProperty("SeqApiKey", !string.IsNullOrEmpty(Config.SeqApiKey))
+                    .Add(Config.LogToFile
+                        ? "{AppName:l} ((MachineName:l}) Log Config - LogFolder: {LogFolder:l}, LogPath: {LogPath:l}, Seq Server: {SeqServer:l}, Api Key: {SeqApiKey}"
+                        : "{AppName:l} ((MachineName:l}) Log Config - Seq Server: {SeqServer:l}, Api Key: {SeqApiKey}");
                 Log.Debug().Add("Running as service");
                 ServiceManager.Start(false);
                 ServiceBase.Run(new Service());
                 ServiceManager.Stop();
                 Log.Debug()
-                    .Add("{AppName:l} v{AppVersion:l} Stopped", Config.AppName, Config.AppVersion);
+                    .Add("{AppName:l} v{AppVersion:l} Stopped as service on {MachineName:l}", Config.AppName,
+                        Config.AppVersion);
             }
             catch (Exception ex)
             {
-                Log.Exception(ex).Add("Exception thrown from service host: {Message:l}", ex.Message);
+                Log.Exception(ex).AddProperty("Message", ex.Message)
+                    .Add("Exception thrown from service host on {MachineName:l}: {Message:l}");
             }
             finally
             {

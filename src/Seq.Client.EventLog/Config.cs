@@ -12,15 +12,18 @@ namespace Seq.Client.EventLog
             AppName = ConfigurationManager.AppSettings["AppName"];
             SeqServer = ConfigurationManager.AppSettings["LogSeqServer"];
             SeqApiKey = ConfigurationManager.AppSettings["LogSeqApiKey"];
+            LogToFile = GetBool(ConfigurationManager.AppSettings["LogSeqApiKey"], true);
             LogFolder = ConfigurationManager.AppSettings["LogFolder"];
             HeartbeatInterval = GetInt(ConfigurationManager.AppSettings["HeartbeatInterval"]);
-            IsDebug = GetBool(ConfigurationManager.AppSettings["IsDebug"]);
 
-            //Must be between 0 and 1 hour in seconds
-            if (HeartbeatInterval < 0 || HeartbeatInterval > 3600)
-                HeartbeatInterval = 600000;
-            else
-                HeartbeatInterval *= 1000;
+            //Minimum is 0 (disabled)
+            if (HeartbeatInterval < 0)
+                HeartbeatInterval = 600;
+            //Maximum is 3600
+            if (HeartbeatInterval > 3600)
+                HeartbeatInterval = 3600;
+
+            IsDebug = GetBool(ConfigurationManager.AppSettings["IsDebug"]);
 
             var isSuccess = true;
             try
@@ -58,6 +61,7 @@ namespace Seq.Client.EventLog
         public static string AppVersion { get; }
         public static string SeqServer { get; }
         public static string SeqApiKey { get; }
+        public static bool LogToFile { get; }
         public static string LogFolder { get; }
         public static int HeartbeatInterval { get; }
         public static bool IsDebug { get; }

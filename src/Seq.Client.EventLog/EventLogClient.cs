@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using Lurgle.Logging;
@@ -17,9 +18,11 @@ namespace Seq.Client.EventLog
             StartListeners(isInteractive);
         }
 
-        public void Stop()
+        public void Stop(string configuration = null)
         {
             StopListeners();
+            if (ServiceManager.SaveOnExit)
+                SaveListeners(configuration);
         }
 
         private void LoadListeners(string configuration)
@@ -35,7 +38,7 @@ namespace Seq.Client.EventLog
                 filePath = configuration;
             }
 
-            Log.Information().Add("Loading listener configuration from {ConfigurationFilePath:l}", filePath);
+            Log.Information().Add("Loading listener configuration from {ConfigurationFilePath:l} on {MachineName:l} ...", filePath);
             var file = File.ReadAllText(filePath);
 
             _eventLogListeners = JsonConvert.DeserializeObject<List<EventLogListener>>(file);
@@ -44,6 +47,35 @@ namespace Seq.Client.EventLog
         private void ValidateListeners()
         {
             foreach (var listener in _eventLogListeners) listener.Validate();
+        }
+
+        private void SaveListeners(string configuration)
+        {
+            string filePath;
+            if (configuration == null)
+            {
+                var directory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                filePath = Path.Combine(directory ?? ".", "EventLogListeners.json");
+            }
+            else
+            {
+                filePath = configuration;
+            }
+
+            try
+            {
+                var json = JsonConvert.SerializeObject(_eventLogListeners, Formatting.Indented,
+                    new JsonSerializerSettings() { });
+
+                Log.Information()
+                    .Add("Saving listener configuration to {ConfigurationFilePath:l} on {MachineName:l} ...", filePath);
+                File.WriteAllText(filePath, json);
+            }
+            catch (Exception ex)
+            {
+                Log.Exception(ex).AddProperty("Message", ex.Message)
+                    .Add("Error saving {ConfigurationFilePath:l} on (MachineName:l}: {Message:l}", filePath);
+            }
         }
 
         private void StartListeners(bool isInteractive = false)
