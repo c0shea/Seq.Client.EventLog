@@ -73,7 +73,7 @@ namespace Seq.Client.EventLog
         /// </summary>
         /// <param name="sourceObject">An object that can be converted to an int</param>
         /// <returns></returns>
-        private static int GetInt(object sourceObject)
+        public static int GetInt(object sourceObject)
         {
             var sourceString = string.Empty;
 

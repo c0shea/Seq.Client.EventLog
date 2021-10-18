@@ -86,7 +86,7 @@ namespace Seq.Client.EventLog
                 foreach (var descendant in element.Elements())
                 foreach (var node in ProcessNode(descendant, depth + 1,
                     depth > 0 && !nodeName.Equals("System", StringComparison.OrdinalIgnoreCase)
-                        ? string.Format($"{nodeName}-{GetName(descendant)}")
+                        ? string.Format($"{nodeName}_{GetName(descendant)}")
                         : GetName(descendant)))
                     result.Add(node.Key, node.Value);
 

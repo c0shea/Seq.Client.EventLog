@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Timers;
 using Lurgle.Logging;
 
@@ -14,9 +15,13 @@ namespace Seq.Client.EventLog
         public static long LastProcessed;
         public static long UnhandledEvents;
         public static long OldEvents;
+        public static long LogonsDetected;
+        public static long NonInteractiveLogons;
 
         public static long EmptyEvents;
 
+        //This will be set if any listener is watching for Windows logins
+        public static bool WindowsLogins;
         //This will be set if any listener has ProcessRetroactiveEntries enabled
         public static bool SaveOnExit;
         private static bool _isInteractive;
@@ -63,22 +68,40 @@ namespace Seq.Client.EventLog
                 UnhandledEvents = 0;
                 OldEvents = 0;
                 EmptyEvents = 0;
+                LogonsDetected = 0;
+                NonInteractiveLogons = 0;
+            }
+
+            var serviceCounters = new Dictionary<string, object>
+            {
+                { "EventsProcessed", diff }, { "TotalProcessed", EventsProcessed }, { "OldEvents", OldEvents },
+                { "EmptyEvents", EmptyEvents }, { "UnhandledEvents", UnhandledEvents }
+            };
+
+            if (WindowsLogins)
+            {
+                serviceCounters.Add("LogonsDetected", LogonsDetected);
+                serviceCounters.Add("NonInteractiveLogons", NonInteractiveLogons);
             }
 
             Log.Debug()
                 .AddProperty("HeartbeatName", $"{Config.AppName} Heartbeat")
-                .AddProperty("EventsProcessed", diff)
-                .AddProperty("TotalProcessed", EventsProcessed)
-                .AddProperty("OldEvents", OldEvents)
-                .AddProperty("EmptyEvents", EmptyEvents)
-                .AddProperty("UnhandledEvents", UnhandledEvents)
+                .AddProperty(serviceCounters)
                 .AddProperty("NextTime",
                     timeNow.AddMilliseconds(_isInteractive ? 60000 : Config.HeartbeatInterval * 1000))
                 .Add(
                     Config.IsDebug
-                        ? "[{HeartbeatName:l} - {MachineName:l}] - Events Processed: {EventsProcessed}, Total Processed: {TotalProcessed}, " +
-                          "Unhandled events: {UnhandledEvents}, Old events seen: {OldEvents}, Empty events: {EmptyEvents}, Next Heartbeat: {NextTime:H:mm:ss tt}"
-                        : "[{HeartbeatName:l} - {MachineName:l}] - Events Processed {EventsProcessed},  Total Processed: {TotalProcessed}, Next Heartbeat: {NextTime:H:mm:ss tt}");
+                        ? WindowsLogins
+                            ? "[{HeartbeatName:l} - {MachineName:l}] - Events Processed: {EventsProcessed}, Total Processed: {TotalProcessed}, " +
+                              "LogonsDetected: {LogonsDetected}, NonInteractiveLogons: {NonInteractiveLogons}, " +
+                              "Unhandled events: {UnhandledEvents}, Old events seen: {OldEvents}, Empty events: {EmptyEvents}, Next Heartbeat: {NextTime:H:mm:ss tt}"
+                            : "[{HeartbeatName:l} - {MachineName:l}] - Events Processed: {EventsProcessed}, Total Processed: {TotalProcessed}, " +
+                              "Unhandled events: {UnhandledEvents}, Old events seen: {OldEvents}, Empty events: {EmptyEvents}, Next Heartbeat: {NextTime:H:mm:ss tt}"
+                        : WindowsLogins
+                            ? "[{HeartbeatName:l} - {MachineName:l}] - Events Processed: {EventsProcessed}, Total Processed: {TotalProcessed}, " +
+                              "LogonsDetected: {LogonsDetected}, NonInteractiveLogons: {NonInteractiveLogons}, Next Heartbeat: {NextTime:H:mm:ss tt}"
+                            : "[{HeartbeatName:l} - {MachineName:l}] - Events Processed: {EventsProcessed}, Total Processed: {TotalProcessed}, " +
+                              "Next Heartbeat: {NextTime:H:mm:ss tt}");
 
             LastProcessed = EventsProcessed;
             _lastTime = timeNow;

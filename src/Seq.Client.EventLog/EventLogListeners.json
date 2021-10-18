@@ -4,9 +4,10 @@
     "LogLevels": [1, 2]
   },
   {
+    "LogAppName": "Security Monitor",
     "LogName": "Security",
     //"LogLevels": [16],
-    "MessageTemplate": "[{LogName:l}] - {ListenerType:l} - ({EventLevel:l}) - Event Id {EventId} - {EventSummary:l}",
+    "MessageTemplate": "[{LogAppName:l}] - {ListenerType:l} - ({EventLevel:l}) - Event Id {EventId} - {EventSummary:l}",
     "ProjectKey": "TEST",
     "Priority": "High",
     "Responders": "MattM",
@@ -14,7 +15,21 @@
     "InitialTimeEstimate": "1h",
     "RemainingTimeEstimate": "1h",
     "DueDate": "7d",
-    "StoreLastEntry": true 
+    "StoreLastEntry": true
+  },
+  {
+    "LogAppName": "Security Logins",
+    "MessageTemplate":
+      "[{LogAppName:l}] New login detected on {MachineName:l} - {EventData_TargetDomainName:l}\\{EventData_TargetUserName:l} at {EventTime:F}",
+    "ProjectKey": "TEST",
+    "Priority": "High",
+    "Responders": "MattM",
+    "Tags": "Extra,Secure,Logging",
+    "InitialTimeEstimate": "1h",
+    "RemainingTimeEstimate": "1h",
+    "DueDate": "7d",
+    "StoreLastEntry": true,
+    "WindowsLogins": true
   },
   //{
   //  "LogName": "Security",
