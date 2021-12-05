@@ -74,7 +74,7 @@ namespace Seq.Client.EventLog
             catch (Exception ex)
             {
                 Log.Exception(ex).AddProperty("Message", ex.Message)
-                    .Add("Error saving {ConfigurationFilePath:l} on (MachineName:l}: {Message:l}", filePath);
+                    .Add("Error saving {ConfigurationFilePath:l} on {MachineName:l}: {Message:l}", filePath);
             }
         }
 

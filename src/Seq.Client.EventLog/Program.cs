@@ -127,8 +127,8 @@ namespace Seq.Client.EventLog
                     .AddProperty("SeqServer", Config.SeqServer)
                     .AddProperty("SeqApiKey", !string.IsNullOrEmpty(Config.SeqApiKey))
                     .Add(Config.LogToFile
-                        ? "{AppName:l} ((MachineName:l}) Log Config - LogFolder: {LogFolder:l}, LogPath: {LogPath:l}, Seq Server: {SeqServer:l}, Api Key: {SeqApiKey}"
-                        : "{AppName:l} ((MachineName:l}) Log Config - Seq Server: {SeqServer:l}, Api Key: {SeqApiKey}");
+                        ? "{AppName:l} ({MachineName:l}) Log Config - LogFolder: {LogFolder:l}, LogPath: {LogPath:l}, Seq Server: {SeqServer:l}, Api Key: {SeqApiKey}"
+                        : "{AppName:l} ({MachineName:l}) Log Config - Seq Server: {SeqServer:l}, Api Key: {SeqApiKey}");
                 Log.Debug().Add("Running as service");
                 ServiceManager.Start(false);
                 ServiceBase.Run(new Service());
