@@ -29,7 +29,8 @@
     "RemainingTimeEstimate": "1h",
     "DueDate": "7d",
     "StoreLastEntry": true,
-    "WindowsLogins": true
+    "WindowsLogins": true,
+    "GuidIsEmpty":  false 
   },
   //{
   //  "LogName": "Security",

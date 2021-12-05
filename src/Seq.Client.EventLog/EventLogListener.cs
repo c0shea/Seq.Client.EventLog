@@ -273,13 +273,13 @@ namespace Seq.Client.EventLog
                         case 2 when entry.Keywords != null &&
                                     ((StandardEventKeywords)entry.Keywords).HasFlag(StandardEventKeywords
                                         .AuditSuccess) && !Equals(ipAddress, "-") &&
-                                    (GuidIsEmpty && logonGuid.Equals("00000000-0000-0000-0000-000000000000") ||
-                                     !GuidIsEmpty && !logonGuid.Equals("00000000-0000-0000-0000-000000000000")):
+                                    (GuidIsEmpty && logonGuid.Equals("{00000000-0000-0000-0000-000000000000}") ||
+                                     !GuidIsEmpty && !logonGuid.Equals("{00000000-0000-0000-0000-000000000000}")):
                         case 10 when entry.Keywords != null &&
                                      ((StandardEventKeywords)entry.Keywords).HasFlag(StandardEventKeywords
                                          .AuditSuccess) && !Equals(ipAddress, "-") &&
-                                     (GuidIsEmpty && logonGuid.Equals("00000000-0000-0000-0000-000000000000") ||
-                                      !GuidIsEmpty && !logonGuid.Equals("00000000-0000-0000-0000-000000000000")):
+                                     (GuidIsEmpty && logonGuid.Equals("{00000000-0000-0000-0000-000000000000}") ||
+                                      !GuidIsEmpty && !logonGuid.Equals("{00000000-0000-0000-0000-000000000000}")):
                             ServiceManager.LogonsDetected++;
                             break;
                         default:
