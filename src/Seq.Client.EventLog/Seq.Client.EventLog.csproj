@@ -38,6 +38,7 @@
     <Version>3.0.2</Version>
     <Authors>Connor O'Shea and contributors</Authors>
     <Copyright>Connor O'Shea</Copyright>
+    <ApplicationIcon>EventLog.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="System" />
