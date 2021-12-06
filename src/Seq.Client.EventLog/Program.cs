@@ -58,14 +58,14 @@ namespace Seq.Client.EventLog
                         Config.AppName, Config.AppVersion);
 
                 var client = new EventLogClient();
-                client.Start(true, configFilePath);
+                EventLogClient.Start(true, configFilePath);
                 ServiceManager.Start(true);
 
                 var done = new ManualResetEvent(false);
                 Console.CancelKeyPress += (s, e) =>
                 {
                     Log.Debug().Add("Ctrl+C pressed, stopping");
-                    client.Stop(configFilePath);
+                    EventLogClient.Stop();
                     done.Set();
                 };
 

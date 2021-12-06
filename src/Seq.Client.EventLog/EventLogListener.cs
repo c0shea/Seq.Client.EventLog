@@ -90,9 +90,13 @@ namespace Seq.Client.EventLog
                     .AddProperty("LogName", LogName)
                     .AddProperty("LogLevels", LogLevels)
                     .AddProperty("ListenerType", Extensions.GetListenerType(MachineName))
-                    .AddProperty("EventIds", EventIds).AddProperty("Sources", Sources)
+                    .AddProperty("EventIds", EventIds)
+                    .AddProperty("Sources", Sources)
                     .AddProperty("RemoteServer", MachineName, false, false)
-                    .AddProperty("WindowsLogins", WindowsLogins).AddProperty("GuidIsEmpty", GuidIsEmpty)
+                    .AddProperty("WindowsLogins", WindowsLogins)
+                    .AddProperty("GuidIsEmpty", GuidIsEmpty)
+                    .AddProperty("ProcessRetroactiveEntries", ProcessRetroactiveEntries)
+                    .AddProperty("StoreLastEntry", StoreLastEntry)
                     .AddProperty("ProjectKey", ProjectKey, false, false)
                     .AddProperty("Priority", Priority, false, false)
                     .AddProperty("Responders", Responders, false, false)
@@ -130,10 +134,12 @@ namespace Seq.Client.EventLog
         {
             var eventLog = new EventLogReader(_eventLog);
 
+            if (ProcessRetroactiveEntries || StoreLastEntry)
+                ServiceManager.SaveBookmarks = true;
+
             if (CurrentBookmark != null && (ProcessRetroactiveEntries || StoreLastEntry))
             {
                 //Go back a position to allow the bookmark to be read
-                ServiceManager.SaveOnExit = true;
                 eventLog.Seek(CurrentBookmark, -1);
                 var checkBookmark = eventLog.ReadEvent();
 
@@ -153,7 +159,6 @@ namespace Seq.Client.EventLog
             }
             else if (ProcessRetroactiveEntries)
             {
-                ServiceManager.SaveOnExit = true;
                 var firstEvent = eventLog.ReadEvent();
                 if (firstEvent != null)
                 {

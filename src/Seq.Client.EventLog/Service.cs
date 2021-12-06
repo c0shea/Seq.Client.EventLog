@@ -15,12 +15,12 @@ namespace Seq.Client.EventLog
 
         protected override void OnStart(string[] args)
         {
-            _client.Start();
+            EventLogClient.Start();
         }
 
         protected override void OnStop()
         {
-            _client.Stop();
+            EventLogClient.Stop();
         }
 
         #endregion
