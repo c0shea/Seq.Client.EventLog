@@ -77,7 +77,7 @@ namespace Seq.Client.EventLog
         {
             var sourceString = string.Empty;
 
-            if (!Convert.IsDBNull(sourceObject)) sourceString = (string)sourceObject;
+            if (!Convert.IsDBNull(sourceObject)) sourceString = (string) sourceObject;
 
             if (int.TryParse(sourceString, out var destInt)) return destInt;
 
@@ -96,7 +96,7 @@ namespace Seq.Client.EventLog
         {
             var sourceString = string.Empty;
 
-            if (!Convert.IsDBNull(sourceObject)) sourceString = (string)sourceObject;
+            if (!Convert.IsDBNull(sourceObject)) sourceString = (string) sourceObject;
 
             return bool.TryParse(sourceString, out var destBool) ? destBool : trueIfEmpty;
         }

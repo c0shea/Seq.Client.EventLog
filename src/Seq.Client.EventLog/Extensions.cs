@@ -17,25 +17,25 @@ namespace Seq.Client.EventLog
 
             if (entry.Keywords != null)
             {
-                if (((StandardEventKeywords)entry.Keywords).HasFlag(StandardEventKeywords.AuditSuccess))
+                if (((StandardEventKeywords) entry.Keywords).HasFlag(StandardEventKeywords.AuditSuccess))
                     return LurgLevel.Information;
 
-                if (((StandardEventKeywords)entry.Keywords).HasFlag(StandardEventKeywords.AuditFailure))
+                if (((StandardEventKeywords) entry.Keywords).HasFlag(StandardEventKeywords.AuditFailure))
                     return LurgLevel.Warning;
             }
 
             // ReSharper disable once PossibleInvalidOperationException
-            switch ((byte)entry.Level)
+            switch ((byte) entry.Level)
             {
-                case (byte)EventLogEntryType.Information:
+                case (byte) EventLogEntryType.Information:
                     return LurgLevel.Information;
-                case (byte)EventLogEntryType.Warning:
+                case (byte) EventLogEntryType.Warning:
                     return LurgLevel.Warning;
-                case (byte)EventLogEntryType.Error:
+                case (byte) EventLogEntryType.Error:
                     return LurgLevel.Error;
-                case (byte)EventLogEntryType.SuccessAudit:
+                case (byte) EventLogEntryType.SuccessAudit:
                     return LurgLevel.Information;
-                case (byte)EventLogEntryType.FailureAudit:
+                case (byte) EventLogEntryType.FailureAudit:
                     return LurgLevel.Warning;
                 default:
                     return LurgLevel.Debug;
@@ -45,7 +45,7 @@ namespace Seq.Client.EventLog
         public static IEnumerable<string> GetArray(string value)
         {
             return (value ?? "")
-                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Split(new[] {','}, StringSplitOptions.RemoveEmptyEntries)
                 .Select(t => t.Trim())
                 .ToArray();
         }
@@ -85,9 +85,9 @@ namespace Seq.Client.EventLog
             else
                 foreach (var descendant in element.Elements())
                 foreach (var node in ProcessNode(descendant, depth + 1,
-                    depth > 0 && !nodeName.Equals("System", StringComparison.OrdinalIgnoreCase)
-                        ? string.Format($"{nodeName}_{GetName(descendant)}")
-                        : GetName(descendant)))
+                             depth > 0 && !nodeName.Equals("System", StringComparison.OrdinalIgnoreCase)
+                                 ? string.Format($"{nodeName}_{GetName(descendant)}")
+                                 : GetName(descendant)))
                     result.Add(node.Key, node.Value);
 
             return result;

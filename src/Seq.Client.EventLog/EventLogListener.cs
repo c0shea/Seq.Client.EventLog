@@ -73,7 +73,7 @@ namespace Seq.Client.EventLog
             {
                 LogName = "Security";
                 LogLevels = new List<byte>();
-                EventIds = new List<int> { 4624 };
+                EventIds = new List<int> {4624};
                 Sources = new List<string>();
                 ServiceManager.WindowsLogins = true;
             }
@@ -243,7 +243,7 @@ namespace Seq.Client.EventLog
         {
             // Don't send the entry to Seq if it doesn't match the filtered log levels, event IDs, or sources
             if (LogLevels != null && LogLevels.Count > 0 && entry.Level != null &&
-                !LogLevels.Contains((byte)entry.Level))
+                !LogLevels.Contains((byte) entry.Level))
             {
                 ServiceManager.UnhandledEvents++;
                 return;
@@ -276,12 +276,12 @@ namespace Seq.Client.EventLog
                     switch (Config.GetInt(logonType))
                     {
                         case 2 when entry.Keywords != null &&
-                                    ((StandardEventKeywords)entry.Keywords).HasFlag(StandardEventKeywords
+                                    ((StandardEventKeywords) entry.Keywords).HasFlag(StandardEventKeywords
                                         .AuditSuccess) && !Equals(ipAddress, "-") &&
                                     (GuidIsEmpty && logonGuid.Equals("{00000000-0000-0000-0000-000000000000}") ||
                                      !GuidIsEmpty && !logonGuid.Equals("{00000000-0000-0000-0000-000000000000}")):
                         case 10 when entry.Keywords != null &&
-                                     ((StandardEventKeywords)entry.Keywords).HasFlag(StandardEventKeywords
+                                     ((StandardEventKeywords) entry.Keywords).HasFlag(StandardEventKeywords
                                          .AuditSuccess) && !Equals(ipAddress, "-") &&
                                      (GuidIsEmpty && logonGuid.Equals("{00000000-0000-0000-0000-000000000000}") ||
                                       !GuidIsEmpty && !logonGuid.Equals("{00000000-0000-0000-0000-000000000000}")):
@@ -297,8 +297,8 @@ namespace Seq.Client.EventLog
                 var eventTimeShort = string.Empty;
                 if (entry.TimeCreated != null)
                 {
-                    eventTimeLong = ((DateTime)entry.TimeCreated).ToString("F");
-                    eventTimeShort = ((DateTime)entry.TimeCreated).ToString("G");
+                    eventTimeLong = ((DateTime) entry.TimeCreated).ToString("F");
+                    eventTimeShort = ((DateTime) entry.TimeCreated).ToString("G");
                 }
 
                 Log.Level(Extensions.MapLogLevel(entry))

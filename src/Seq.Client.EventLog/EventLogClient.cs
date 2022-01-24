@@ -1,11 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using Lurgle.Logging;
-using Newtonsoft.Json;
-
-namespace Seq.Client.EventLog
+﻿namespace Seq.Client.EventLog
 {
     internal class EventLogClient
     {

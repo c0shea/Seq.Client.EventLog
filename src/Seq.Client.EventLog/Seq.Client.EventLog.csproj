@@ -35,7 +35,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
-    <Version>3.0.2</Version>
+    <Version>3.0.3</Version>
     <Authors>Connor O'Shea and contributors</Authors>
     <Copyright>Connor O'Shea</Copyright>
     <ApplicationIcon>EventLog.ico</ApplicationIcon>
@@ -60,8 +60,8 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Lurgle.Logging" Version="1.2.8" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
+    <PackageReference Include="Lurgle.Logging" Version="1.2.9" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="6.0.0" />
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.1</Version>
     </PackageReference>

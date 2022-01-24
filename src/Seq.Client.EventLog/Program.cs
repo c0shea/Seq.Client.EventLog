@@ -28,10 +28,10 @@ namespace Seq.Client.EventLog
                 switch (parameter)
                 {
                     case "/install":
-                        ManagedInstallerClass.InstallHelper(new[] { Assembly.GetExecutingAssembly().Location });
+                        ManagedInstallerClass.InstallHelper(new[] {Assembly.GetExecutingAssembly().Location});
                         break;
                     case "/uninstall":
-                        ManagedInstallerClass.InstallHelper(new[] { "/u", Assembly.GetExecutingAssembly().Location });
+                        ManagedInstallerClass.InstallHelper(new[] {"/u", Assembly.GetExecutingAssembly().Location});
                         break;
                     default:
                         RunInteractive(parameter);
@@ -47,7 +47,7 @@ namespace Seq.Client.EventLog
         private static void RunInteractive(string configFilePath)
         {
             Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
-                logType: new List<LogType> { LogType.Console, LogType.Seq }, logSeqServer: Config.SeqServer,
+                logType: new List<LogType> {LogType.Console, LogType.Seq}, logSeqServer: Config.SeqServer,
                 logSeqApiKey: Config.SeqApiKey, logLevel: LurgLevel.Verbose, logLevelConsole: LurgLevel.Verbose,
                 logLevelSeq: LurgLevel.Verbose));
 
@@ -57,7 +57,7 @@ namespace Seq.Client.EventLog
                     .Add("{AppName:l} v{AppVersion:l} Starting in interactive mode on {MachineName:l} ...",
                         Config.AppName, Config.AppVersion);
 
-                var client = new EventLogClient();
+                var unused = new EventLogClient();
                 EventLogClient.Start(true, configFilePath);
                 ServiceManager.Start(true);
 
@@ -104,14 +104,14 @@ namespace Seq.Client.EventLog
                 logFile = Path.Combine(logFolder ?? string.Empty, "ServiceLog.txt");
 
                 Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
-                    logType: new List<LogType> { LogType.File, LogType.Seq }, logDays: 7, logName: Config.AppName,
+                    logType: new List<LogType> {LogType.File, LogType.Seq}, logDays: 7, logName: Config.AppName,
                     logFolder: Config.LogFolder, logSeqServer: Config.SeqServer, logSeqApiKey: Config.SeqApiKey,
                     logLevel: LurgLevel.Verbose, logLevelFile: LurgLevel.Verbose, logLevelSeq: LurgLevel.Verbose));
             }
             else
             {
                 Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
-                    logType: new List<LogType> { LogType.Seq }, logSeqServer: Config.SeqServer,
+                    logType: new List<LogType> {LogType.Seq}, logSeqServer: Config.SeqServer,
                     logSeqApiKey: Config.SeqApiKey,
                     logLevel: LurgLevel.Verbose, logLevelSeq: LurgLevel.Verbose));
             }

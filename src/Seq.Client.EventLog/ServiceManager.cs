@@ -12,8 +12,6 @@ namespace Seq.Client.EventLog
 {
     public static class ServiceManager
     {
-        public static string JsonConfigPath { get; set; }
-        public static List<EventLogListener> EventLogListeners { get; set; }
         private static Timer _heartbeatTimer;
         public static readonly DateTime ServiceStart = DateTime.Now;
         public static long EventsProcessed;
@@ -32,6 +30,8 @@ namespace Seq.Client.EventLog
         public static bool SaveBookmarks;
         private static bool _isInteractive;
         private static DateTime _lastTime = DateTime.Now;
+        public static string JsonConfigPath { get; set; }
+        public static List<EventLogListener> EventLogListeners { get; set; }
 
 
         public static void Start(bool isInteractive)
@@ -78,12 +78,12 @@ namespace Seq.Client.EventLog
                         JsonConfigPath);
             var file = File.ReadAllText(JsonConfigPath);
 
-            ServiceManager.EventLogListeners = JsonConvert.DeserializeObject<List<EventLogListener>>(file);
+            EventLogListeners = JsonConvert.DeserializeObject<List<EventLogListener>>(file);
         }
 
         public static void ValidateListeners()
         {
-            foreach (var listener in ServiceManager.EventLogListeners) listener.Validate();
+            foreach (var listener in EventLogListeners) listener.Validate();
         }
 
         public static void SaveListeners()
