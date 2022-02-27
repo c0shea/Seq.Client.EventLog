@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Timers;
 using Lurgle.Logging;
 using Newtonsoft.Json;
+using Timer = System.Timers.Timer;
 
 // ReSharper disable MemberCanBePrivate.Global
 
@@ -33,6 +36,7 @@ namespace Seq.Client.EventLog
         public static string JsonConfigPath { get; set; }
         public static List<EventLogListener> EventLogListeners { get; set; }
 
+        private static int ZeroLogHeartbeats { get; set; } = 0;
 
         public static void Start(bool isInteractive)
         {
@@ -143,6 +147,26 @@ namespace Seq.Client.EventLog
             {
                 serviceCounters.Add("LogonsDetected", LogonsDetected);
                 serviceCounters.Add("NonInteractiveLogons", NonInteractiveLogons);
+            }
+
+            if (Config.HeartbeatsBeforeReset > 0)
+            {
+                if (EventsProcessed > LastProcessed)
+                    ZeroLogHeartbeats = 0;
+                else
+                    ZeroLogHeartbeats++;
+
+                if (ZeroLogHeartbeats > Config.HeartbeatsBeforeReset)
+                {
+                    Log.Warning().AddProperty("HeartbeatName", $"{Config.AppName} Heartbeat")
+                        .AddProperty("HeartbeatCount", ZeroLogHeartbeats)
+                        .AddProperty("NextTime", timeNow.AddMilliseconds(_isInteractive ? 60000 : Config.HeartbeatInterval * 1000))
+                        .Add("[{HeartbeatName:l} - {MachineName:l}] - Detected that new no log entries have been seen in the past {Heartbeats} heartbeats, resetting listeners ...");
+
+                    StopListeners(); 
+                    Thread.Sleep(1000);
+                    StartListeners(_isInteractive);
+                }
             }
 
             Log.Debug()

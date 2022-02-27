@@ -15,6 +15,7 @@ namespace Seq.Client.EventLog
             LogToFile = GetBool(ConfigurationManager.AppSettings["LogSeqApiKey"], true);
             LogFolder = ConfigurationManager.AppSettings["LogFolder"];
             HeartbeatInterval = GetInt(ConfigurationManager.AppSettings["HeartbeatInterval"]);
+            HeartbeatsBeforeReset = GetInt(ConfigurationManager.AppSettings["HeartbeatsBeforeReset"]);
 
             //Minimum is 0 (disabled)
             if (HeartbeatInterval < 0)
@@ -22,6 +23,9 @@ namespace Seq.Client.EventLog
             //Maximum is 3600
             if (HeartbeatInterval > 3600)
                 HeartbeatInterval = 3600;
+
+            if (HeartbeatsBeforeReset < 0)
+                HeartbeatsBeforeReset = 0;
 
             IsDebug = GetBool(ConfigurationManager.AppSettings["IsDebug"]);
 
@@ -65,6 +69,7 @@ namespace Seq.Client.EventLog
         public static string LogFolder { get; }
         public static int HeartbeatInterval { get; }
         public static bool IsDebug { get; }
+        public static int HeartbeatsBeforeReset { get; }
 
         /// <summary>
         ///     Convert the supplied <see cref="object" /> to an <see cref="int" />
