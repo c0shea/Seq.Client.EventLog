@@ -18,6 +18,7 @@ namespace Seq.Client.EventLog
         private static Timer _heartbeatTimer;
         public static readonly DateTime ServiceStart = DateTime.Now;
         public static long EventsProcessed;
+        public static long LastEventsProcessed;
         public static long LastProcessed;
         public static long UnhandledEvents;
         public static long OldEvents;
@@ -122,13 +123,14 @@ namespace Seq.Client.EventLog
         private static void ServiceHeartbeat(object sender, ElapsedEventArgs e)
         {
             var timeNow = DateTime.Now;
-            var diff = EventsProcessed - LastProcessed;
+            var diff = EventsProcessed - LastEventsProcessed;
 
             if (timeNow.Day != _lastTime.Day)
             {
                 Log.Debug().AddProperty("HeartbeatName", $"{Config.AppName} Heartbeat")
                     .Add("[{HeartbeatName:l} - {MachineName:l}] Day rollover, resetting counters ...");
                 EventsProcessed = 0;
+                LastEventsProcessed = 0;
                 LastProcessed = 0;
                 UnhandledEvents = 0;
                 OldEvents = 0;
@@ -151,7 +153,7 @@ namespace Seq.Client.EventLog
 
             if (Config.HeartbeatsBeforeReset > 0)
             {
-                if (EventsProcessed > LastProcessed)
+                if (EventsProcessed + UnhandledEvents + OldEvents + EmptyEvents + LogonsDetected + NonInteractiveLogons > LastProcessed)
                     ZeroLogHeartbeats = 0;
                 else
                     ZeroLogHeartbeats++;
@@ -161,7 +163,7 @@ namespace Seq.Client.EventLog
                     Log.Warning().AddProperty("HeartbeatName", $"{Config.AppName} Heartbeat")
                         .AddProperty("HeartbeatCount", ZeroLogHeartbeats)
                         .AddProperty("NextTime", timeNow.AddMilliseconds(_isInteractive ? 60000 : Config.HeartbeatInterval * 1000))
-                        .Add("[{HeartbeatName:l} - {MachineName:l}] - Detected that new no log entries have been seen in the past {Heartbeats} heartbeats, resetting listeners ...");
+                        .Add("[{HeartbeatName:l} - {MachineName:l}] - Detected that no new log entries have been seen in the past {HeartbeatCount} heartbeats, resetting listeners ...");
 
                     StopListeners(); 
                     Thread.Sleep(1000);
@@ -188,7 +190,8 @@ namespace Seq.Client.EventLog
                             : "[{HeartbeatName:l} - {MachineName:l}] - Events Processed: {EventsProcessed}, Total Processed: {TotalProcessed}, " +
                               "Next Heartbeat: {NextTime:H:mm:ss tt}");
 
-            LastProcessed = EventsProcessed;
+            LastProcessed = EventsProcessed + UnhandledEvents + OldEvents + EmptyEvents + LogonsDetected + NonInteractiveLogons;
+            LastEventsProcessed = EventsProcessed;
             _lastTime = timeNow;
 
             //Periodically save the listener config if we are storing this
