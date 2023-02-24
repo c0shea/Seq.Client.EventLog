@@ -12,7 +12,7 @@ namespace Seq.Client.EventLog
             AppName = ConfigurationManager.AppSettings["AppName"];
             SeqServer = ConfigurationManager.AppSettings["LogSeqServer"];
             SeqApiKey = ConfigurationManager.AppSettings["LogSeqApiKey"];
-            LogToFile = GetBool(ConfigurationManager.AppSettings["LogSeqApiKey"], true);
+            LogToFile = GetBool(ConfigurationManager.AppSettings["LogToFile"], true);
             LogFolder = ConfigurationManager.AppSettings["LogFolder"];
             HeartbeatInterval = GetInt(ConfigurationManager.AppSettings["HeartbeatInterval"]);
             HeartbeatsBeforeReset = GetInt(ConfigurationManager.AppSettings["HeartbeatsBeforeReset"]);
