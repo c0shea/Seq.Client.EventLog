@@ -113,7 +113,8 @@ namespace Seq.Client.EventLog
 
         public static string GetMessage(string message)
         {
-            return message.Contains(Environment.NewLine) &&
+            return message != null &&
+                   message.Contains(Environment.NewLine) &&
                    !string.IsNullOrEmpty(message.Substring(0,
                        message.IndexOf(Environment.NewLine, StringComparison.Ordinal)))
                 ? message.Substring(0, message.IndexOf(Environment.NewLine, StringComparison.Ordinal))
