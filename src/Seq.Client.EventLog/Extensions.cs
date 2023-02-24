@@ -88,7 +88,17 @@ namespace Seq.Client.EventLog
                              depth > 0 && !nodeName.Equals("System", StringComparison.OrdinalIgnoreCase)
                                  ? string.Format($"{nodeName}_{GetName(descendant)}")
                                  : GetName(descendant)))
-                    result.Add(node.Key, node.Value);
+                    {
+                        if (!result.ContainsKey(node.Key)) result.Add(node.Key, node.Value);
+
+                        // handle duplicate keys, hacky but fast
+                        else if (!result.ContainsKey(node.Key + "2")) result.Add(node.Key + "2", node.Value);
+                        else if (!result.ContainsKey(node.Key + "3")) result.Add(node.Key + "3", node.Value);
+                        else if (!result.ContainsKey(node.Key + "4")) result.Add(node.Key + "4", node.Value);
+                        else if (!result.ContainsKey(node.Key + "5")) result.Add(node.Key + "5", node.Value);
+                        else Log.Warning()
+                                .Add("Event contained more than 5 nodes with same key: {NodeKey:l} = {NodeValue:l}", node.Key, node.Value);
+                    }
 
             return result;
         }
