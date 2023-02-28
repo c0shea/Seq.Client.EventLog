@@ -301,6 +301,16 @@ namespace Seq.Client.EventLog
                     eventTimeShort = ((DateTime) entry.TimeCreated).ToString("G");
                 }
 
+                IEnumerable<string> keywordsDisplayNames;
+                // some entries throw a "System.Diagnostics.Eventing.Reader.EventLogNotFoundException" when accessing the .KeywordsDisplayNames property
+                try
+                {
+                    keywordsDisplayNames = entry.KeywordsDisplayNames;
+                } catch (EventLogNotFoundException ex)
+                {
+                    keywordsDisplayNames = null;
+                }
+
                 Log.Level(Extensions.MapLogLevel(entry))
                     .SetTimestamp(entry.TimeCreated ?? DateTime.Now)
                     .AddProperty("LogAppName", LogAppName)
@@ -313,7 +323,7 @@ namespace Seq.Client.EventLog
                     .AddProperty("EventTime", entry.TimeCreated)
                     .AddProperty("EventTimeLong", eventTimeLong)
                     .AddProperty("EventTimeShort", eventTimeShort)
-                    .AddProperty("KeywordNames", entry.KeywordsDisplayNames)
+                    .AddProperty("KeywordNames", keywordsDisplayNames)
                     .AddProperty("RemoteServer", MachineName, false, false)
                     .AddProperty("ListenerType", Extensions.GetListenerType(MachineName))
                     .AddProperty("EventLevel", entry.LevelDisplayName)
