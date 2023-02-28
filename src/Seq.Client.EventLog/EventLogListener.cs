@@ -302,13 +302,17 @@ namespace Seq.Client.EventLog
                 }
 
                 IEnumerable<string> keywordsDisplayNames;
-                // some entries throw a "System.Diagnostics.Eventing.Reader.EventLogNotFoundException" when accessing the .KeywordsDisplayNames property
+                // some entries throw a "EventLogNotFoundException" or "EventLogProviderDisabledException" when accessing the .KeywordsDisplayNames property
                 try
                 {
                     keywordsDisplayNames = entry.KeywordsDisplayNames;
                 } catch (EventLogNotFoundException ex)
                 {
-                    keywordsDisplayNames = null;
+                    keywordsDisplayNames = new string[] { ex.ToString() };
+                }
+                catch (EventLogProviderDisabledException ex)
+                {
+                    keywordsDisplayNames = new string[] { ex.ToString() };
                 }
 
                 Log.Level(Extensions.MapLogLevel(entry))
