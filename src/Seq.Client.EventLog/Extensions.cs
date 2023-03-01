@@ -84,20 +84,20 @@ namespace Seq.Client.EventLog
                 result.Add(nodeName, element.Value);
             else
                 foreach (var descendant in element.Elements())
-                foreach (var node in ProcessNode(descendant, depth + 1,
-                             depth > 0 && !nodeName.Equals("System", StringComparison.OrdinalIgnoreCase)
-                                 ? string.Format($"{nodeName}_{GetName(descendant)}")
-                                 : GetName(descendant)))
+                    foreach (var node in ProcessNode(descendant, depth + 1,
+                                 depth > 0 && !nodeName.Equals("System", StringComparison.OrdinalIgnoreCase)
+                                     ? string.Format($"{nodeName}_{GetName(descendant)}")
+                                     : GetName(descendant)))
                     {
-                        if (!result.ContainsKey(node.Key)) result.Add(node.Key, node.Value);
-
-                        // handle duplicate keys, hacky but fast
-                        else if (!result.ContainsKey(node.Key + "2")) result.Add(node.Key + "2", node.Value);
-                        else if (!result.ContainsKey(node.Key + "3")) result.Add(node.Key + "3", node.Value);
-                        else if (!result.ContainsKey(node.Key + "4")) result.Add(node.Key + "4", node.Value);
-                        else if (!result.ContainsKey(node.Key + "5")) result.Add(node.Key + "5", node.Value);
-                        else Log.Warning()
-                                .Add("Event contained more than 5 nodes with same key: {NodeKey:l} = {NodeValue:l}", node.Key, node.Value);
+                        if (!result.ContainsKey(node.Key))
+                        {
+                            result.Add(node.Key, node.Value);
+                        }
+                        else
+                        {
+                            // looks like a multi valued property, convert to string and append to existing entry
+                            result[node.Key] = String.Format("{0}, {1}", result[node.Key], node.Value);
+                        }
                     }
 
             return result;

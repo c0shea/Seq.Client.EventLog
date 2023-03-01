@@ -35,7 +35,7 @@
   </PropertyGroup>
   <PropertyGroup>
     <StartupObject />
-    <Version>3.1.1</Version>
+    <Version>3.2.0</Version>
     <Authors>Connor O'Shea and contributors</Authors>
     <Copyright>Connor O'Shea</Copyright>
     <ApplicationIcon>EventLog.ico</ApplicationIcon>
