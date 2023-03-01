@@ -315,6 +315,21 @@ namespace Seq.Client.EventLog
                     keywordsDisplayNames = new string[] { ex.ToString() };
                 }
 
+                string levelDisplayName;
+                // some entries throw a "EventLogNotFoundException" or "EventLogProviderDisabledException" when accessing the .LevelDisplayName property
+                try
+                {
+                    levelDisplayName = entry.LevelDisplayName;
+                }
+                catch (EventLogNotFoundException ex)
+                {
+                    levelDisplayName = ex.ToString();
+                }
+                catch (EventLogProviderDisabledException ex)
+                {
+                    levelDisplayName = ex.ToString();
+                }
+
                 Log.Level(Extensions.MapLogLevel(entry))
                     .SetTimestamp(entry.TimeCreated ?? DateTime.Now)
                     .AddProperty("LogAppName", LogAppName)
@@ -330,7 +345,7 @@ namespace Seq.Client.EventLog
                     .AddProperty("KeywordNames", keywordsDisplayNames)
                     .AddProperty("RemoteServer", MachineName, false, false)
                     .AddProperty("ListenerType", Extensions.GetListenerType(MachineName))
-                    .AddProperty("EventLevel", entry.LevelDisplayName)
+                    .AddProperty("EventLevel", levelDisplayName)
                     .AddProperty("EventLevelId", entry.Level)
                     .AddProperty("EventDescription", entry.FormatDescription())
                     .AddProperty("EventSummary", Extensions.GetMessage(entry.FormatDescription()))
