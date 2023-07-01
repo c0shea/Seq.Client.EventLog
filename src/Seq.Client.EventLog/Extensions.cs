@@ -84,11 +84,21 @@ namespace Seq.Client.EventLog
                 result.Add(nodeName, element.Value);
             else
                 foreach (var descendant in element.Elements())
-                foreach (var node in ProcessNode(descendant, depth + 1,
-                             depth > 0 && !nodeName.Equals("System", StringComparison.OrdinalIgnoreCase)
-                                 ? string.Format($"{nodeName}_{GetName(descendant)}")
-                                 : GetName(descendant)))
-                    result.Add(node.Key, node.Value);
+                    foreach (var node in ProcessNode(descendant, depth + 1,
+                                 depth > 0 && !nodeName.Equals("System", StringComparison.OrdinalIgnoreCase)
+                                     ? string.Format($"{nodeName}_{GetName(descendant)}")
+                                     : GetName(descendant)))
+                    {
+                        if (!result.ContainsKey(node.Key))
+                        {
+                            result.Add(node.Key, node.Value);
+                        }
+                        else
+                        {
+                            // looks like a multi valued property, convert to string and append to existing entry
+                            result[node.Key] = String.Format("{0}, {1}", result[node.Key], node.Value);
+                        }
+                    }
 
             return result;
         }
@@ -103,7 +113,8 @@ namespace Seq.Client.EventLog
 
         public static string GetMessage(string message)
         {
-            return message.Contains(Environment.NewLine) &&
+            return message != null &&
+                   message.Contains(Environment.NewLine) &&
                    !string.IsNullOrEmpty(message.Substring(0,
                        message.IndexOf(Environment.NewLine, StringComparison.Ordinal)))
                 ? message.Substring(0, message.IndexOf(Environment.NewLine, StringComparison.Ordinal))
