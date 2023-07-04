@@ -60,7 +60,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Lurgle.Logging" Version="1.3.1" />
+    <PackageReference Include="Lurgle.Logging" Version="1.3.2" />
     <PackageReference Include="Newtonsoft.Json">
       <Version>13.0.3</Version>
     </PackageReference>
