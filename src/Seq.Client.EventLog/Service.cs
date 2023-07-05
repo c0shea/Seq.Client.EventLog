@@ -4,9 +4,8 @@ namespace Seq.Client.EventLog
 {
     public partial class Service : ServiceBase
     {
-        private readonly EventLogClient _client = new EventLogClient();
-
         #region Windows Service Base
+
         public Service()
         {
             InitializeComponent();
@@ -14,13 +13,14 @@ namespace Seq.Client.EventLog
 
         protected override void OnStart(string[] args)
         {
-            _client.Start();
+            EventLogClient.Start();
         }
-        
+
         protected override void OnStop()
         {
-            _client.Stop();
+            EventLogClient.Stop();
         }
+
         #endregion
     }
 }

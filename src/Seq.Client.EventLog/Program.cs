@@ -1,20 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration.Install;
 using System.IO;
 using System.Reflection;
 using System.ServiceProcess;
 using System.Threading;
-using Serilog;
+using Lurgle.Logging;
 
 namespace Seq.Client.EventLog
 {
-    static class Program
+    internal static class Program
     {
         /// <summary>
-        /// The main entry point for the application.
-        /// The service can be installed or uninstalled from the command line
-        /// by passing the /install or /uninstall argument, and can be run
-        /// interactively by specifying the path to the JSON configuration file.
+        ///     The main entry point for the application.
+        ///     The service can be installed or uninstalled from the command line
+        ///     by passing the /install or /uninstall argument, and can be run
+        ///     interactively by specifying the path to the JSON configuration file.
         /// </summary>
         public static void Main(string[] args)
         {
@@ -22,18 +23,15 @@ namespace Seq.Client.EventLog
             if (Environment.UserInteractive)
             {
                 var parameter = string.Concat(args);
-                if (string.IsNullOrWhiteSpace(parameter))
-                {
-                    parameter = null;
-                }
+                if (string.IsNullOrWhiteSpace(parameter)) parameter = null;
 
                 switch (parameter)
                 {
                     case "/install":
-                        ManagedInstallerClass.InstallHelper(new[] { Assembly.GetExecutingAssembly().Location });
+                        ManagedInstallerClass.InstallHelper(new[] {Assembly.GetExecutingAssembly().Location});
                         break;
                     case "/uninstall":
-                        ManagedInstallerClass.InstallHelper(new[] { "/u", Assembly.GetExecutingAssembly().Location });
+                        ManagedInstallerClass.InstallHelper(new[] {"/u", Assembly.GetExecutingAssembly().Location});
                         break;
                     default:
                         RunInteractive(parameter);
@@ -46,71 +44,107 @@ namespace Seq.Client.EventLog
             }
         }
 
-        static void RunInteractive(string configFilePath)
+        private static void RunInteractive(string configFilePath)
         {
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.Console()
-                .CreateLogger();
+            Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
+                logType: new List<LogType> {LogType.Console, LogType.Seq}, logSeqServer: Config.SeqServer,
+                logSeqApiKey: Config.SeqApiKey, logLevel: LurgLevel.Verbose, logLevelConsole: LurgLevel.Verbose,
+                logLevelSeq: LurgLevel.Verbose));
 
             try
             {
-                Log.Information("Running interactively");
+                Log.Debug()
+                    .Add("{AppName:l} v{AppVersion:l} Starting in interactive mode on {MachineName:l} ...",
+                        Config.AppName, Config.AppVersion);
 
-                var client = new EventLogClient();
-                client.Start(configFilePath);
+                var unused = new EventLogClient();
+                EventLogClient.Start(true, configFilePath);
+                ServiceManager.Start(true);
 
                 var done = new ManualResetEvent(false);
                 Console.CancelKeyPress += (s, e) =>
                 {
-                    Log.Information("Ctrl+C pressed, stopping");
-                    client.Stop();
+                    Log.Debug().Add("Ctrl+C pressed, stopping");
+                    EventLogClient.Stop();
                     done.Set();
                 };
 
                 done.WaitOne();
-                Log.Information("Stopped");
+                ServiceManager.Stop();
+                Log.Debug()
+                    .Add("{AppName:l} v{AppVersion:l} Stopped in interactive  mode on {MachineName:l}", Config.AppName,
+                        Config.AppVersion);
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "An unhandled exception occurred");
+                Log.Exception(ex).AddProperty("Message", ex.Message)
+                    .Add("An unhandled exception occurred on {MachineName:l}: {Message:l}");
                 Environment.ExitCode = 1;
             }
             finally
             {
-                Log.CloseAndFlush();
+                Logging.Close();
             }
         }
 
-        static void RunService()
+        private static void RunService()
         {
-            var logFile = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                typeof(Program).Assembly.GetName().Name,
-                "ServiceLog.txt");
+            var logFile = string.Empty;
+            if (Config.LogToFile)
+            {
+                var logFolder = Config.LogFolder;
 
-            Log.Logger = new LoggerConfiguration()
-                .WriteTo.File(
-                    logFile,
-                    rollingInterval: RollingInterval.Day,
-                    rollOnFileSizeLimit: true,
-                    retainedFileCountLimit: 7,
-                    fileSizeLimitBytes: 10_000_000,
-                    shared: true)
-                .CreateLogger();
+                if (string.IsNullOrEmpty(logFolder))
+                    logFolder = Path.Combine(
+                        Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty, "Logs");
+
+                if (!Directory.Exists(logFolder))
+                    Directory.CreateDirectory(logFolder);
+
+                logFile = Path.Combine(logFolder ?? string.Empty, "ServiceLog.txt");
+
+                Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
+                    logType: new List<LogType> {LogType.File, LogType.Seq}, logDays: 7, logName: Config.AppName,
+                    logFolder: Config.LogFolder, logSeqServer: Config.SeqServer, logSeqApiKey: Config.SeqApiKey,
+                    logLevel: LurgLevel.Verbose, logLevelFile: LurgLevel.Verbose, logLevelSeq: LurgLevel.Verbose));
+            }
+            else
+            {
+                Logging.SetConfig(new LoggingConfig(appName: Config.AppName, appVersion: Config.AppVersion,
+                    logType: new List<LogType> {LogType.Seq}, logSeqServer: Config.SeqServer,
+                    logSeqApiKey: Config.SeqApiKey,
+                    logLevel: LurgLevel.Verbose, logLevelSeq: LurgLevel.Verbose));
+            }
 
             try
             {
-                Log.Information("Running as service");
+                Log.Debug()
+                    .Add("{AppName:l} v{AppVersion:l} Starting as service on {MachineName:l} ...", Config.AppName,
+                        Config.AppVersion);
+                Log.Debug()
+                    .AddProperty("LogFolder", Config.LogFolder, false, false)
+                    .AddProperty("LogPath", logFile, false, false)
+                    .AddProperty("SeqServer", Config.SeqServer)
+                    .AddProperty("SeqApiKey", !string.IsNullOrEmpty(Config.SeqApiKey))
+                    .Add(Config.LogToFile
+                        ? "{AppName:l} ({MachineName:l}) Log Config - LogFolder: {LogFolder:l}, LogPath: {LogPath:l}, Seq Server: {SeqServer:l}, Api Key: {SeqApiKey}"
+                        : "{AppName:l} ({MachineName:l}) Log Config - Seq Server: {SeqServer:l}, Api Key: {SeqApiKey}");
+                Log.Debug().Add("Running as service");
+                ServiceManager.Start(false);
                 ServiceBase.Run(new Service());
-                Log.Information("Stopped");
+                ServiceManager.Stop();
+                Log.Debug()
+                    .Add("{AppName:l} v{AppVersion:l} Stopped as service on {MachineName:l}", Config.AppName,
+                        Config.AppVersion);
             }
             catch (Exception ex)
             {
-                Log.Fatal(ex, "Exception thrown from service host");
+                Log.Exception(ex).AddProperty("Message", ex.Message)
+                    .Add("Exception thrown from service host on {MachineName:l}: {Message:l}");
             }
             finally
             {
-                Log.CloseAndFlush();
+                Logging.Close();
             }
         }
     }

@@ -1,22 +1,48 @@
 ﻿[
   {
     "LogName": "Application",
-    "LogLevels": [ 1, 2 ],
-    "ProcessRetroactiveEntries": true
+    "LogLevels": [1, 2]
   },
   {
+    "LogAppName": "Security Monitor",
     "LogName": "Security",
-    "LogLevels": [ 16 ],
-    "ProcessRetroactiveEntries": true
+    //"LogLevels": [16],
+    "MessageTemplate": "[{LogAppName:l}] - {ListenerType:l} - ({EventLevel:l}) - Event Id {EventId} - {EventSummary:l}",
+    "ProjectKey": "TEST",
+    "Priority": "High",
+    "Responders": "MattM",
+    "Tags": "Extra,Secure,Logging",
+    "InitialTimeEstimate": "1h",
+    "RemainingTimeEstimate": "1h",
+    "DueDate": "7d",
+    "StoreLastEntry": true
   },
+  {
+    "LogAppName": "Security Logins",
+    "MessageTemplate":
+      "[{LogAppName:l}] New login detected on {MachineName:l} - {EventData_TargetDomainName:l}\\{EventData_TargetUserName:l} at {EventTime:F}",
+    "ProjectKey": "TEST",
+    "Priority": "High",
+    "Responders": "MattM",
+    "Tags": "Extra,Secure,Logging",
+    "InitialTimeEstimate": "1h",
+    "RemainingTimeEstimate": "1h",
+    "DueDate": "7d",
+    "StoreLastEntry": true,
+    "WindowsLogins": true,
+    "GuidIsEmpty": false
+  },
+  //{
+  //  "LogName": "Security",
+  //  "LogLevels": [ 16 ],
+  //  "MachineName":  "TESTPC" 
+  //},
   {
     "LogName": "Setup",
-    "LogLevels": [ 1, 2 ],
     "ProcessRetroactiveEntries": true
   },
   {
     "LogName": "System",
-    "LogLevels": [ 1, 2 ],
-    "ProcessRetroactiveEntries": true
+    "LogLevels": [1, 2]
   }
 ]
